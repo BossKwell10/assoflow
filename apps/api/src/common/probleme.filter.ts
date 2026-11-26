@@ -26,6 +26,9 @@ export class ProblemeFilter implements ExceptionFilter {
     const corps = this.versProbleme(exception, String(requete.id));
     if (corps.status >= 500)
       this.logger.error(exception instanceof Error ? exception.stack : String(exception));
+    if (exception instanceof ErreurMetier) {
+      for (const [nom, valeur] of Object.entries(exception.entetes)) void reponse.header(nom, valeur);
+    }
     void reponse.status(corps.status).header('content-type', 'application/problem+json').send(corps);
   }
 

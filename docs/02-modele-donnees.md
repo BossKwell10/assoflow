@@ -170,3 +170,18 @@ pull de sync (`association_id, sync_version`), notifications en attente.
 - Règle *expand/contract* : ajout de colonne nullable ou avec défaut → déploiement → remplissage → contrainte.
   Jamais de renommage ni de suppression de colonne utilisée par la version N-1 de l'API ou de l'app mobile.
 - Toute migration est testée dans la CI sur une base contenant le jeu de données de staging.
+- `schema.sql` = migration `0001` ; les évolutions suivantes sont dans `packages/db/migrations` :
+  - `0002_auth_sessions.sql` (sprint 1) : `sessions.association_id` (association active, révocation par tenant),
+    `otp_codes.jeton_utilise_at` (jeton OTP à usage unique), `users.verrouillages_recents`,
+    `users.dernier_verrouillage` (verrouillage progressif), `users.totp_dernier_pas` (anti-rejeu TOTP) ;
+    politique `audit_ecriture_auth` (événements d'authentification dans la chaîne plateforme) ; trigger de chaînage
+    d'audit en `SECURITY DEFINER` (sinon, sous RLS, un utilisateur sans rôle plateforme ne voit pas la fin de la chaîne
+    plateforme et la casse) ; fonction `app_mes_acces()` (`SECURITY DEFINER`, accès actifs de `app_user_id()` tous
+    tenants confondus, pour `/auth/moi`, `/auth/contexte` et la connexion).
+  - `0003_membres_association.sql` (sprint 2) : extensions `unaccent` et `pg_trgm`, fonction `app_normaliser()`
+    (minuscules sans accents, `IMMUTABLE`) et index trigramme de recherche des membres ; `membres.anonymise_at`
+    (RG-MBR-009) ; `empreinte_creation` sur `membres`, `familles`, `ayants_droit` (idempotence des créations à id
+    client, docs/07 §5) ; index des doublons à vérifier et des ayants droit par membre.
+- Les fonctions `SECURITY DEFINER` (`plateforme_statistiques`, `app_next_sync_version`, `app_mes_acces`,
+  `trg_audit_chainage`) supposent que leur propriétaire (`assoflow_owner`) contourne la RLS (superutilisateur ou
+  `BYPASSRLS`) : les tables étant en `FORCE ROW LEVEL SECURITY`, c'est à vérifier au provisionnement de production.

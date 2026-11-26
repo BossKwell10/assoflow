@@ -13,6 +13,31 @@ const schema = z.object({
   CONSOLE_ORIGIN: z.url().default('http://localhost:5173'),
   DATABASE_APP_URL: z.string().min(1).optional(),
   REDIS_URL: z.string().min(1).optional(),
+  /** Clés Ed25519 au format PEM (PKCS#8 / SPKI) pour signer les jetons d'accès (docs/04 §3). */
+  JWT_PRIVATE_KEY: z.string().min(1).optional(),
+  JWT_PUBLIC_KEY: z.string().min(1).optional(),
+  /** Clé AES-256 (32 octets en base64) pour les champs chiffrés (TOTP). */
+  FIELD_ENCRYPTION_KEY: z
+    .string()
+    .refine((v) => Buffer.from(v, 'base64').length === 32, 'clé AES-256 de 32 octets en base64 attendue')
+    .optional(),
+  /** Poivre des HMAC d'OTP et de codes de secours (au moins 16 caractères). */
+  OTP_PEPPER: z.string().min(16).optional(),
+  /** Fournisseurs SMS par ordre de préférence. Sprint 1 : `journal` uniquement (docs/06 §4.1). */
+  SMS_PROVIDERS: z.string().default('journal'),
+  /** Stockage objet S3 compatible (docs/01 §6). Sans `S3_BUCKET` : stockage local sur disque (hors production). */
+  S3_ENDPOINT: z.url().optional(),
+  S3_REGION: z.string().min(1).default('ci-abj'),
+  S3_BUCKET: z.string().min(1).optional(),
+  S3_ACCESS_KEY: z.string().min(1).optional(),
+  S3_SECRET_KEY: z.string().min(1).optional(),
+  /** Adressage « chemin » (MinIO, Ceph) plutôt que sous-domaine. */
+  S3_FORCE_PATH_STYLE: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  /** Dossier du stockage local (développement, tests) ; défaut : dossier temporaire du système. */
+  STOCKAGE_LOCAL_DIR: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   MIN_APP_VERSION: z
     .string()
@@ -35,8 +60,25 @@ export function chargerConfig(env: NodeJS.ProcessEnv = process.env): Config {
     throw new Error(`Configuration invalide — ${details}`);
   }
   const config = resultat.data;
-  if (config.NODE_ENV === 'production' && !config.DATABASE_APP_URL) {
-    throw new Error('Configuration invalide — DATABASE_APP_URL est obligatoire en production');
+  if (config.NODE_ENV === 'production') {
+    const manquantes = (
+      [
+        'DATABASE_APP_URL',
+        'JWT_PRIVATE_KEY',
+        'JWT_PUBLIC_KEY',
+        'FIELD_ENCRYPTION_KEY',
+        'OTP_PEPPER',
+        'S3_BUCKET',
+        'S3_ACCESS_KEY',
+        'S3_SECRET_KEY',
+      ] as const
+    ).filter((cle) => !config[cle]);
+    if (manquantes.length > 0) {
+      throw new Error(`Configuration invalide — ${manquantes.join(', ')} obligatoire(s) en production`);
+    }
+  }
+  if (Boolean(config.JWT_PRIVATE_KEY) !== Boolean(config.JWT_PUBLIC_KEY)) {
+    throw new Error('Configuration invalide — JWT_PRIVATE_KEY et JWT_PUBLIC_KEY vont de pair');
   }
   return config;
 }

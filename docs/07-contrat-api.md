@@ -63,10 +63,12 @@ Format *Problem Details* (RFC 9457), `Content-Type: application/problem+json` :
 | 403 | `PERMISSION_REFUSEE`, `ACCES_REVOQUE`, `LECTURE_SEULE_SUPPORT` | Autorisation |
 | 404 | `INTROUVABLE` | Ressource absente ou d'un autre tenant |
 | 409 | `CONFLIT_IDEMPOTENCE`, `ETAT_INCOMPATIBLE` | Même id/clé avec contenu différent ; transition de statut impossible |
+| 412 | `PRECONDITION_ECHOUEE` | `If-Match` ne correspond plus à la version courante (§5) |
 | 422 | `VALIDATION` | Champs invalides (détail dans `erreurs[]`) |
 | 422 | `REFERENCE_INVALIDE`, `EXERCICE_FERME`, `SOLDE_INSUFFISANT`, `MONTANT_INVALIDE`, `CONFIRMATION_REQUISE`, `JUSTIFICATIF_REQUIS`, `AUTO_VALIDATION_INTERDITE`, `VALIDEUR_DEJA_DECIDE`, `PRESIDENT_REQUIS`, `ECHEANCE_DEJA_IMPUTEE`, `DEPENSES_EN_COURS`, `MOT_DE_PASSE_FAIBLE` | Règles de gestion (voir 03) |
 | 423 | `COMPTE_VERROUILLE`, `TENANT_SUSPENDU` | Verrouillages |
 | 426 | `APP_OBSOLETE`, `SCHEMA_OBSOLETE` | Versions mobiles |
+| 428 | `PRECONDITION_REQUISE` | `If-Match` absent sur un `PATCH` concurrentiel depuis la console (§5) |
 | 429 | `TROP_DE_REQUETES` | Limites de débit (en-tête `Retry-After`) |
 | 500 | `ERREUR_INTERNE` | Inattendu (jamais de pile d'appel dans la réponse) |
 
@@ -79,6 +81,15 @@ La console affiche `detail` à l'utilisateur ; elle mappe `erreurs[].champ` sur 
   (UUID). Même clé + même corps → même réponse pendant 7 jours ; corps différent → `409 CONFLIT_IDEMPOTENCE`.
 - Concurrence sur les entités modifiables (`membres`, `campagnes`, `depenses` soumises…) : `ETag` sur le `GET`
   (dérivé de `sync_version`), `If-Match` **obligatoire** sur `PATCH` depuis la console → `412` si la ressource a changé.
+  Valeur opaque, aussi exposée dans le champ `etag` du corps (le client généré ne lit pas les en-têtes) ; `If-Match: *`
+  accepté. `If-Match` absent depuis la console (claim `can = console`) → `428 PRECONDITION_REQUISE` ; depuis le mobile,
+  facultatif (la synchronisation gère ses propres conflits, 05). Sprint 2 : `PATCH /association` (ETag = empreinte du
+  contenu : `associations.updated_at` change à chaque écriture du tenant via `sync_counter`) et `PATCH /membres/{id}`
+  (ETag = `sync_version`).
+- Créations à `id` client (`membres`, `familles`, `ayants droit`) : l'empreinte du corps de création est conservée
+  (`empreinte_creation`) ; rejeu avec le même id et le même corps → `200` et l'état **actuel** de la ressource, même si
+  elle a été modifiée depuis ; corps différent → `409 CONFLIT_IDEMPOTENCE`. Un id déjà pris par un autre tenant donne
+  aussi `409` (sans révéler l'existence).
 
 ## 6. Fichiers
 

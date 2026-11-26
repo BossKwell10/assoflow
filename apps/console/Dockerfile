@@ -9,7 +9,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --froze
 RUN pnpm turbo run build --filter=@assoflow/console...
 
 # Fichiers statiques servis par nginx non privilégié (port 8080)
-FROM nginxinc/nginx-unprivileged:1.29-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 COPY apps/console/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /repo/apps/console/dist /usr/share/nginx/html
 EXPOSE 8080

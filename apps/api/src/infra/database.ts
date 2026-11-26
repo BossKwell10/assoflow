@@ -5,6 +5,9 @@ import { contexteCourant, type ContexteRequete } from '../common/contexte.js';
 
 export type Tx = pg.PoolClient;
 
+// Les colonnes `date` (dates métier) restent des chaînes AAAA-MM-JJ : pas de conversion par fuseau (D-008).
+pg.types.setTypeParser(pg.types.builtins.DATE, (v: string) => v);
+
 /**
  * Accès PostgreSQL avec le rôle applicatif (sans BYPASSRLS).
  * Toute requête métier passe par `tx()`, qui pose le contexte RLS par `SET LOCAL`

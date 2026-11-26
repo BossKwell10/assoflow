@@ -1,1 +1,0 @@
-{"root":["./src/App.test.tsx","./src/App.tsx","./src/main.tsx","./src/router.tsx","./src/test-setup.ts","./src/theme.ts","./src/layout/Coquille.tsx","./src/routes/APlusTard.tsx","./src/routes/TableauDeBord.tsx","./src/shared/Montant.tsx","./src/shared/Statut.tsx","./src/shared/api.ts","./vite.config.ts"],"version":"5.9.3"}

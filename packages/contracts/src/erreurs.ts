@@ -16,6 +16,7 @@ export const CODES_ERREUR = {
   CONFLIT_IDEMPOTENCE: 409,
   ETAT_INCOMPATIBLE: 409,
   PRECONDITION_ECHOUEE: 412,
+  PRECONDITION_REQUISE: 428,
   VALIDATION: 422,
   REFERENCE_INVALIDE: 422,
   EXERCICE_FERME: 422,
@@ -45,5 +46,5 @@ export interface ErreurProbleme {
   code: CodeErreur;
   detail?: string;
   requestId?: string;
-  erreurs?: { champ: string; code: string; message: string }[];
+  erreurs?: { champ: string; code: string; message: string; ref?: string | null }[];
 }

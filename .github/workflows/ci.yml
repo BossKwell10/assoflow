@@ -32,9 +32,9 @@ jobs:
       DATABASE_URL: postgres://assoflow_owner:assoflow@localhost:5432/assoflow
       DATABASE_APP_URL: postgres://assoflow_app:assoflow@localhost:5432/assoflow
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -67,13 +67,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}/${{ matrix.app }}
           tags: |
             type=sha,format=short
             type=semver,pattern={{version}}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/${{ matrix.app }}/Dockerfile
@@ -83,9 +83,11 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
       - name: Scan de vulnérabilités
-        uses: aquasecurity/trivy-action@0.33.1
+        # Tag au format vX.Y.Z (la forme sans « v » n'existe pas) ; épinglé sur le commit de v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository }}/${{ matrix.app }}:${{ steps.meta.outputs.version }}
+          # Référence produite par metadata-action, déjà en minuscules (BossKwell10 → bosskwell10)
+          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
           severity: HIGH,CRITICAL
           exit-code: '1'
           ignore-unfixed: true

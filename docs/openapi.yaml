@@ -64,9 +64,11 @@ paths:
               - but
       responses:
         '204':
-          description: Succès sans contenu
+          description: Succès sans contenu (même réponse si le numéro n'a pas de compte ; aucun SMS n'est alors envoyé)
         '422':
           $ref: '#/components/responses/Invalide'
+        '429':
+          $ref: '#/components/responses/TropDeRequetes'
         default:
           $ref: '#/components/responses/Erreur'
       security: []
@@ -123,7 +125,9 @@ paths:
       - Authentification
       summary: Définir ou réinitialiser le mot de passe (après OTP)
       operationId: post_auth_mot_de_passe
-      description: 'Exigences : RF-004, RF-SUP-053.'
+      description: 'Exigences : RF-004, RF-SUP-053, RF-SUP-054. Le jeton OTP (but `inscription` ou `reinitialisation`)
+        est à usage unique. À la première définition (ou à un changement de version des textes), `accepteCgu` et
+        `accepteTraitementDonnees` doivent valoir true (sinon 422 VALIDATION). Révoque toutes les sessions.'
       requestBody:
         required: true
         content:
@@ -136,6 +140,18 @@ paths:
                 motDePasse:
                   type: string
                   minLength: 10
+                accepteCgu:
+                  type: boolean
+                  description: Acceptation des CGU (version courante)
+                accepteTraitementDonnees:
+                  type: boolean
+                  description: Consentement au traitement des données personnelles
+                canal:
+                  type: string
+                  enum:
+                  - console
+                  - mobile
+                  description: Canal de recueil du consentement (défaut mobile)
               required:
               - jetonOtp
               - motDePasse
@@ -185,8 +201,7 @@ paths:
                 - $ref: '#/components/schemas/Session'
                 - $ref: '#/components/schemas/EtapeTotp'
         '423':
-          $ref: '#/components/responses/Erreur'
-          description: Compte verrouillé
+          $ref: '#/components/responses/Verrouille'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -220,6 +235,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Session'
+        '423':
+          $ref: '#/components/responses/Verrouille'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -231,7 +248,9 @@ paths:
       - Authentification
       summary: Démarrer l'activation TOTP
       operationId: post_auth_totp_activation
-      description: 'Exigences : RF-003.'
+      description: 'Exigences : RF-003. Bearer = access token, ou jeton intermédiaire `totp_activation` reçu à la
+        connexion (activation obligatoire avant la première connexion console d''un membre du bureau). 409 si le TOTP
+        est déjà actif.'
       responses:
         '200':
           description: Succès
@@ -258,7 +277,9 @@ paths:
       - Authentification
       summary: Confirmer TOTP et obtenir les codes de secours
       operationId: post_auth_totp_confirmation
-      description: 'Exigences : RF-003.'
+      description: 'Exigences : RF-003. Les 10 codes de secours ne sont affichés qu''une fois. Appelée avec le jeton
+        intermédiaire `totp_activation`, termine aussi la connexion : `session` est alors présente (et le cookie de
+        refresh posé pour la console). Code incorrect : 422 VALIDATION (champ `code`).'
       requestBody:
         required: true
         content:
@@ -282,6 +303,10 @@ paths:
                     type: array
                     items:
                       type: string
+                  session:
+                    $ref: '#/components/schemas/Session'
+                required:
+                - codesSecours
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
@@ -296,7 +321,9 @@ paths:
       - Authentification
       summary: Renouveler l'access token
       operationId: post_auth_refresh
-      description: 'Console : cookie HttpOnly + en-tête X-Requested-With. Mobile : refreshToken dans le corps.'
+      description: 'Console : cookie HttpOnly `assoflow_refresh` (Path=/v1/auth) + en-tête `X-Requested-With:
+        assoflow-console`, corps `{}`. Mobile : refreshToken dans le corps. Rotation à chaque usage ; la présentation
+        d''un refresh déjà utilisé révoque toute la session (401 SESSION_REVOQUEE).'
       requestBody:
         required: true
         content:
@@ -360,6 +387,9 @@ paths:
       - Authentification
       summary: Choisir l'association active
       operationId: post_auth_contexte
+      description: 'Renvoie un nouvel access token portant `aid` (le refresh token n''est pas renouvelé). 403
+        ACCES_REVOQUE sans accès actif au mandat en cours. À la connexion, l''association est choisie d''office si
+        l''utilisateur n''en a qu''une.'
       requestBody:
         required: true
         content:
@@ -425,6 +455,9 @@ paths:
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -440,16 +473,22 @@ paths:
       - Association
       summary: Modifier le profil et les paramètres
       operationId: patch_association
-      description: 'Permission : `association.modifier`. Exigences : RF-ADM-020, RF-ADM-024.'
+      description: 'Permission : `association.modifier`. Exigences : RF-ADM-020, RF-ADM-024. RG-ASS-003 : `seuilDoubleValidation` modifiable par le président uniquement (403 sinon).
+        Concurrence optimiste : `If-Match` (valeur de l''`ETag` ou du champ `etag`) obligatoire depuis la console.'
+      parameters:
+      - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Association'
+              $ref: '#/components/schemas/AssociationMaj'
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -460,6 +499,10 @@ paths:
           $ref: '#/components/responses/Interdit'
         '422':
           $ref: '#/components/responses/Invalide'
+        '412':
+          $ref: '#/components/responses/PreconditionEchouee'
+        '428':
+          $ref: '#/components/responses/PreconditionRequise'
         default:
           $ref: '#/components/responses/Erreur'
   /association/logo:
@@ -468,7 +511,7 @@ paths:
       - Association
       summary: Remplacer le logo (multipart)
       operationId: put_association_logo
-      description: 'Permission : `association.modifier`.'
+      description: 'Permission : `association.modifier`. PNG, JPEG ou WebP (type vérifié sur le contenu), 2 Mo maximum.'
       requestBody:
         required: true
         content:
@@ -484,6 +527,9 @@ paths:
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -551,7 +597,7 @@ paths:
       - Association
       summary: Clôturer un exercice
       operationId: post_exercices_id_cloturer
-      description: 'Permission : `exercice.cloturer`. RG-EXE-003.'
+      description: 'Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s''il reste des dépenses soumises ou validées rattachées à l''exercice ou datées dans sa période ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -574,6 +620,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /acces:
@@ -1005,6 +1053,7 @@ paths:
       - name: etat
         in: query
         required: false
+        description: Par défaut, les membres désactivés sont exclus (RG-MBR-004)
         schema:
           type: string
       - name: categorieId
@@ -1060,7 +1109,7 @@ paths:
       - Membres
       summary: Créer un membre
       operationId: post_membres
-      description: 'Permission : `membre.creer`. Exigences : RF-020.'
+      description: 'Permission : `membre.creer`. Exigences : RF-020. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 avec la fiche existante ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`. Doublon probable (RG-MBR-003) non confirmé → 422 `CONFIRMATION_REQUISE` (`erreurs[0].ref` = id de la fiche existante) ; renvoyer avec `confirmationDoublon: true`.'
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -1068,10 +1117,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Membre'
+              $ref: '#/components/schemas/MembreCreation'
       responses:
         '201':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+        '200':
+          description: Rejeu idempotent (même id, même contenu) — fiche existante
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -1082,6 +1143,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/doublons:
@@ -1251,6 +1314,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}:
@@ -1270,6 +1335,9 @@ paths:
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -1287,7 +1355,7 @@ paths:
       - Membres
       summary: Modifier un membre
       operationId: patch_membres_id
-      description: 'Permission : `membre.modifier`.'
+      description: 'Permission : `membre.modifier`. Concurrence optimiste : `If-Match` (valeur de l''`ETag` ou du champ `etag`) obligatoire depuis la console.'
       parameters:
       - name: id
         in: path
@@ -1295,6 +1363,7 @@ paths:
         schema:
           type: string
           format: uuid
+      - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
@@ -1304,6 +1373,9 @@ paths:
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -1316,6 +1388,12 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '412':
+          $ref: '#/components/responses/PreconditionEchouee'
+        '428':
+          $ref: '#/components/responses/PreconditionRequise'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/suspendre:
@@ -1324,7 +1402,7 @@ paths:
       - Membres
       summary: Suspendre
       operationId: post_membres_id_suspendre
-      description: 'Permission : `membre.suspendre`. Exigences : RF-027.'
+      description: 'Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `actif` uniquement, sinon 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -1353,6 +1431,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/reactiver:
@@ -1361,7 +1441,7 @@ paths:
       - Membres
       summary: Réactiver
       operationId: post_membres_id_reactiver
-      description: 'Permission : `membre.suspendre`. Exigences : RF-027.'
+      description: 'Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `suspendu` ou `desactive`, sinon 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -1384,6 +1464,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/desactiver:
@@ -1392,7 +1474,7 @@ paths:
       - Membres
       summary: Désactiver
       operationId: post_membres_id_desactiver
-      description: 'Permission : `membre.suspendre`. Exigences : RF-027.'
+      description: 'Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `actif` ou `suspendu`, sinon 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -1421,6 +1503,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/anonymiser:
@@ -1429,7 +1513,7 @@ paths:
       - Membres
       summary: Anonymiser (irréversible)
       operationId: post_membres_id_anonymiser
-      description: 'Permission : `membre.anonymiser`. Exigences : RF-SUP-055.'
+      description: 'Permission : `membre.anonymiser`. Exigences : RF-SUP-055. RG-MBR-009 : irréversible ; 409 `ETAT_INCOMPATIBLE` si déjà anonymisée ou si le membre a un accès app actif (le révoquer d''abord).'
       parameters:
       - name: id
         in: path
@@ -1458,6 +1542,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/acces-app:
@@ -1466,7 +1552,7 @@ paths:
       - Membres
       summary: Ouvrir l'accès à l'app au membre (invitation)
       operationId: post_membres_id_acces_app
-      description: 'Permission : `utilisateur.gerer`.'
+      description: 'Permission : `utilisateur.gerer`. Invitation (docs/04 §2.1) avec le rôle système `membre`, liée à la fiche ; téléphone requis (422) ; membre désactivé ou anonymisé → 409.'
       parameters:
       - name: id
         in: path
@@ -1489,6 +1575,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/photo:
@@ -1532,6 +1620,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/situation:
@@ -1660,7 +1750,7 @@ paths:
       - Membres
       summary: Ajouter un ayant droit
       operationId: post_membres_id_ayants_droit
-      description: 'Permission : `membre.modifier`. Exigences : RF-028.'
+      description: 'Permission : `membre.modifier`. Exigences : RF-028. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`.'
       parameters:
       - name: id
         in: path
@@ -1681,6 +1771,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AyantDroit'
+        '200':
+          description: Rejeu idempotent (même id, même contenu) — ayant droit existant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AyantDroit'
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
@@ -1689,6 +1785,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/ayants-droit/{ayantDroitId}:
@@ -1732,6 +1830,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
     delete:
@@ -1762,6 +1862,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /familles:
@@ -1797,7 +1899,7 @@ paths:
       - Membres
       summary: Créer une famille
       operationId: post_familles
-      description: 'Permission : `membre.creer`. Exigences : RF-021.'
+      description: 'Permission : `membre.creer`. Exigences : RF-021. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`.'
       requestBody:
         required: true
         content:
@@ -1811,12 +1913,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Famille'
+        '200':
+          description: Rejeu idempotent (même id, même contenu) — famille existante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Famille'
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
           $ref: '#/components/responses/Interdit'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /familles/{id}:
@@ -5998,7 +6108,32 @@ components:
         type: string
         maxLength: 100
       description: Clé unique (UUID) ; rejouer la même requête renvoie la même réponse pendant 7 jours
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Valeur de l'`ETag` (ou du champ `etag`) lue avant la modification. Obligatoire depuis la console
+        (428 `PRECONDITION_REQUISE` sinon) ; 412 `PRECONDITION_ECHOUEE` si la ressource a changé depuis (docs/07 §5).
+  headers:
+    ETag:
+      description: Version opaque de la ressource, à renvoyer dans `If-Match` (identique au champ `etag` du corps)
+      schema:
+        type: string
   responses:
+    PreconditionEchouee:
+      description: La ressource a été modifiée depuis sa lecture (PRECONDITION_ECHOUEE) — relire puis réessayer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
+    PreconditionRequise:
+      description: En-tête If-Match obligatoire depuis la console (PRECONDITION_REQUISE)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
     NonAuthentifie:
       description: Jeton absent, expiré ou révoqué
       content:
@@ -6017,6 +6152,12 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Erreur'
+    Conflit:
+      description: Conflit d'idempotence (CONFLIT_IDEMPOTENCE) ou transition d'état impossible (ETAT_INCOMPATIBLE)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
     Invalide:
       description: Données invalides ou règle de gestion violée
       content:
@@ -6025,6 +6166,28 @@ components:
             $ref: '#/components/schemas/Erreur'
     Erreur:
       description: Erreur
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
+    Verrouille:
+      description: Compte verrouillé après des échecs consécutifs (COMPTE_VERROUILLE)
+      headers:
+        Retry-After:
+          description: Secondes avant la fin du verrouillage
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
+    TropDeRequetes:
+      description: Plus de 3 demandes d'OTP pour ce numéro en 15 min (TROP_DE_REQUETES)
+      headers:
+        Retry-After:
+          description: Secondes avant de pouvoir redemander un code
+          schema:
+            type: integer
       content:
         application/problem+json:
           schema:
@@ -6057,6 +6220,11 @@ components:
                 type: string
               message:
                 type: string
+              ref:
+                type:
+                - string
+                - 'null'
+                description: Identifiant d'une ressource liée (ex. fiche existante d'un doublon probable)
       required:
       - type
       - title
@@ -6091,10 +6259,18 @@ components:
               type: string
             libelle:
               type: string
+          required:
+          - code
+          - libelle
         permissions:
           type: array
           items:
             type: string
+      required:
+      - associationId
+      - associationNom
+      - role
+      - permissions
     UtilisateurMoi:
       type: object
       properties:
@@ -6131,8 +6307,11 @@ components:
       required:
       - id
       - telephone
+      - email
       - nom
       - prenoms
+      - totpActif
+      - rolePlateforme
       - acces
     Session:
       type: object
@@ -6153,11 +6332,15 @@ components:
       - utilisateur
     EtapeTotp:
       type: object
+      description: '`totp` : saisir le code via POST /auth/totp. `totp_activation` : TOTP exigé mais pas encore
+        activé ; le jeton intermédiaire sert de Bearer pour /auth/totp/activation puis /auth/totp/confirmation.
+        Jeton valable 5 min.'
       properties:
         etape:
           type: string
           enum:
           - totp
+          - totp_activation
         jetonIntermediaire:
           type: string
       required:
@@ -6261,6 +6444,10 @@ components:
         quotaSmsMensuel:
           type: integer
           readOnly: true
+        etag:
+          type: string
+          readOnly: true
+          description: Version opaque (identique à l'en-tête ETag), à renvoyer dans If-Match
       required:
       - id
       - nom
@@ -6268,6 +6455,78 @@ components:
       - region
       - devise
       - statut
+    AssociationMaj:
+      type: object
+      description: Modification partielle du profil (champs envoyés seulement)
+      properties:
+        nom:
+          type: string
+        sigle:
+          type:
+          - string
+          - 'null'
+        type:
+          type: string
+          enum:
+          - association
+          - mutuelle_developpement
+          - mutuelle_sociale
+          - autre
+        village:
+          type: string
+        sousPrefecture:
+          type:
+          - string
+          - 'null'
+        region:
+          type: string
+        dateCreation:
+          type:
+          - string
+          - 'null'
+          format: date
+        recepisseNumero:
+          type:
+          - string
+          - 'null'
+        recepisseDate:
+          type:
+          - string
+          - 'null'
+          format: date
+        prefectureDepot:
+          type:
+          - string
+          - 'null'
+        telephone:
+          type:
+          - string
+          - 'null'
+          pattern: ^\+[1-9][0-9]{7,14}$
+        email:
+          type:
+          - string
+          - 'null'
+          format: email
+        moisDebutExercice:
+          type: integer
+          minimum: 1
+          maximum: 12
+        seuilDoubleValidation:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Montant en FCFA (XOF), entier. Président uniquement (RG-ASS-003)
+        seuilAlerteSolde:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Montant en FCFA (XOF), entier
+        joursRetardDormant:
+          type: integer
+          minimum: 1
+        journalPublicActif:
+          type: boolean
     Exercice:
       type: object
       properties:
@@ -6488,6 +6747,13 @@ components:
               format: date-time
             verrouille:
               type: boolean
+          required:
+          - id
+          - telephone
+          - nom
+          - prenoms
+          - derniereConnexion
+          - verrouille
         role:
           $ref: '#/components/schemas/Role'
         membreId:
@@ -6511,6 +6777,14 @@ components:
           - actif
           - revoque
           - expire
+      required:
+      - id
+      - user
+      - role
+      - membreId
+      - mandatDebut
+      - mandatFin
+      - statut
     AccesInvitation:
       type: object
       properties:
@@ -6608,6 +6882,11 @@ components:
           type: string
         reserveePresident:
           type: boolean
+      required:
+      - code
+      - module
+      - libelle
+      - reserveePresident
     CategorieMembre:
       type: object
       properties:
@@ -6789,6 +7068,21 @@ components:
         doublonProbable:
           type: boolean
           readOnly: true
+        doublonDe:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          readOnly: true
+          description: Fiche probablement identique (RG-MBR-003), renseignée tant que le doublon n'est pas écarté
+        anonymise:
+          type: boolean
+          readOnly: true
+          description: Fiche anonymisée (RG-MBR-009, irréversible)
+        etag:
+          type: string
+          readOnly: true
+          description: Version opaque (identique à l'en-tête ETag), à renvoyer dans If-Match
         createdAt:
           type: string
           format: date-time
@@ -6875,6 +7169,33 @@ components:
           type:
           - string
           - 'null'
+    MembreCreation:
+      description: Création d'un membre (console). Le consentement au traitement des données est obligatoire (docs/08 A4).
+      allOf:
+      - $ref: '#/components/schemas/Membre'
+      - type: object
+        properties:
+          consentement:
+            type: object
+            description: Accord du membre pour le traitement de ses données, recueilli par le bureau (RF-SUP-054)
+            properties:
+              traitementDonnees:
+                type: boolean
+                const: true
+              canal:
+                type: string
+                enum:
+                - console
+                - papier
+            required:
+            - traitementDonnees
+            - canal
+          confirmationDoublon:
+            type: boolean
+            default: false
+            description: Enregistrer malgré un doublon probable signalé par 422 CONFIRMATION_REQUISE (RG-MBR-003)
+        required:
+        - consentement
     SituationMembre:
       type: object
       properties:
@@ -6916,6 +7237,7 @@ components:
         type:
           type: string
           enum:
+          - creation
           - paiement
           - annulation
           - aide

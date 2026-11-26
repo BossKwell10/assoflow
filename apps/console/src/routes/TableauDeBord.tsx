@@ -1,50 +1,43 @@
 import { Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { useQuery } from '@tanstack/react-query';
-import { appelApi } from '../shared/api';
+import { useGetHealthReady } from '../api/generated/sante/sante';
+import { t, type CleTexte } from '../i18n';
 import { Montant } from '../shared/Montant';
 import { Statut } from '../shared/Statut';
 
-interface Sante {
-  statut: 'ok' | 'degrade';
-  dependances: { postgres: string };
-}
+const CARTES: [CleTexte, number][] = [
+  ['tableauDeBord.recettes', 0],
+  ['tableauDeBord.depenses', 0],
+  ['tableauDeBord.solde', 0],
+];
 
 /** A1 — sera branché sur GET /v1/tableau-de-bord (sprint 7). */
 export function TableauDeBord() {
-  const sante = useQuery({
-    queryKey: ['sante'],
-    queryFn: () => appelApi<Sante>('/health/ready'),
-    retry: false,
-  });
+  const sante = useGetHealthReady({ query: { retry: false } });
 
   return (
     <Stack gap="lg" maw={1240}>
       <Title order={1} size={28}>
-        Tableau de bord
+        {t('tableauDeBord.titre')}
       </Title>
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
-        {[
-          ['Recettes de l’exercice', 0],
-          ['Dépenses de l’exercice', 0],
-          ['Solde total', 0],
-        ].map(([libelle, valeur]) => (
-          <Card key={libelle as string} withBorder radius="lg" padding="lg">
+        {CARTES.map(([cle, valeur]) => (
+          <Card key={cle} withBorder radius="lg" padding="lg">
             <Text size="sm" c="dimmed">
-              {libelle}
+              {t(cle)}
             </Text>
-            <Montant valeur={valeur as number} size="xl" />
+            <Montant valeur={valeur} size="xl" />
           </Card>
         ))}
         <Card withBorder radius="lg" padding="lg">
           <Text size="sm" c="dimmed">
-            API
+            {t('tableauDeBord.api')}
           </Text>
           <Group mt={6}>
-            {sante.isPending && <Statut ton="neutre">Vérification…</Statut>}
-            {sante.isError && <Statut ton="alerte">Injoignable</Statut>}
+            {sante.isPending && <Statut ton="neutre">{t('tableauDeBord.verification')}</Statut>}
+            {sante.isError && <Statut ton="alerte">{t('tableauDeBord.injoignable')}</Statut>}
             {sante.data && (
               <Statut ton={sante.data.statut === 'ok' ? 'succes' : 'attente'}>
-                {sante.data.statut === 'ok' ? 'Opérationnelle' : 'Dégradée'}
+                {sante.data.statut === 'ok' ? t('tableauDeBord.operationnelle') : t('tableauDeBord.degradee')}
               </Statut>
             )}
           </Group>

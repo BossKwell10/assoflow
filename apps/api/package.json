@@ -11,14 +11,21 @@
     "start:worker": "node dist/main.worker.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed:demo": "tsc -p tsconfig.build.json && node --env-file-if-exists=../../.env dist/scripts/seed-demo.js"
   },
   "dependencies": {
     "@assoflow/contracts": "workspace:*",
+    "@aws-sdk/client-s3": "^3.1178.0",
+    "@aws-sdk/s3-request-presigner": "^3.1178.0",
+    "@fastify/multipart": "^10.1.9",
     "@nestjs/common": "^12.6.0",
     "@nestjs/core": "^12.6.0",
     "@nestjs/platform-fastify": "^12.6.0",
+    "@node-rs/argon2": "^2.2.2",
     "fastify": "^5.6.0",
+    "ioredis": "^6.1.0",
+    "jose": "^6.2.18",
     "pg": "^8.16.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
