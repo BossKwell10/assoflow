@@ -50,16 +50,26 @@ function EntreeMenu({ entree, chemin }: { entree: (typeof MENU)[number]; chemin:
   );
 }
 
+/**
+ * Exercice ouvert le plus récent (docs/08 §4.1). En cas d'erreur (API indisponible, endpoint non
+ * déployé), l'en-tête l'indique sobrement sans bloquer la console ni réessayer en boucle.
+ */
 function Exercice() {
   const lecture = useAuMoinsUnePermission('association.lire');
-  const exercices = useGetExercices({ query: { enabled: lecture, staleTime: 5 * 60_000 } });
+  const exercices = useGetExercices({ query: { enabled: lecture, staleTime: 5 * 60_000, retry: false } });
+  if (!lecture || exercices.isPending) return null;
+  if (exercices.isError)
+    return (
+      <Text size="xs" c="dimmed">
+        {t('entete.exerciceIndisponible')}
+      </Text>
+    );
   const ouvert = exercices.data
-    ?.filter((e) => e.statut === 'ouvert')
+    .filter((e) => e.statut === 'ouvert')
     .sort((a, b) => b.dateDebut.localeCompare(a.dateDebut))[0];
-  if (!ouvert) return null;
   return (
-    <Text size="xs" c="dimmed">
-      {t('entete.exercice', { libelle: ouvert.libelle })}
+    <Text size="xs" c={ouvert ? 'dimmed' : '#8A4B00'}>
+      {ouvert ? t('entete.exercice', { libelle: ouvert.libelle }) : t('entete.aucunExercice')}
     </Text>
   );
 }

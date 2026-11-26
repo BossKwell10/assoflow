@@ -111,6 +111,10 @@ const ecrans: { path: string; titre: string; sprint: string; permission: Permiss
   { path: '/rapports', titre: t('menu.rapports'), sprint: 'sprint 7', permission: 'rapport.lire' },
 ];
 
+/** Route de l'espace association protégée par permission ; le composant est chargé à la demande. */
+const ecran = <P extends string>(path: P, permission: Permission | Permission[], composant: RouteComponent) =>
+  createRoute({ getParentRoute: () => espace, path, component: protege(permission, composant) });
+
 export const routeTree = racine.addChildren([
   connexion,
   motDePasseOublie,
@@ -140,6 +144,24 @@ export const routeTree = racine.addChildren([
         lazyRouteComponent(() => import('./features/parametres/Parametres'), 'Parametres'),
       ),
     }),
+    ecran(
+      '/parametres/association',
+      'association.modifier',
+      lazyRouteComponent(
+        () => import('./features/parametres/ParametresAssociation'),
+        'ParametresAssociation',
+      ),
+    ),
+    ecran(
+      '/parametres/exercices',
+      ['exercice.gerer', 'exercice.cloturer'],
+      lazyRouteComponent(() => import('./features/parametres/Exercices'), 'Exercices'),
+    ),
+    ecran(
+      '/parametres/categories',
+      'association.modifier',
+      lazyRouteComponent(() => import('./features/parametres/Categories'), 'Categories'),
+    ),
     createRoute({
       getParentRoute: () => espace,
       path: '/parametres/utilisateurs',
