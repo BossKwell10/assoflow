@@ -26,12 +26,16 @@ import type {
 
 import type {
   Association,
+  AssociationMaj,
+  ConflitResponse,
   ErreurResponse,
   Exercice,
   InterditResponse,
   InvalideResponse,
   NonAuthentifieResponse,
   NonTrouveResponse,
+  PreconditionEchoueeResponse,
+  PreconditionRequiseResponse,
   PutAssociationLogoBody
 } from '../modeles';
 
@@ -231,17 +235,17 @@ export const getPatchAssociationUrl = () => {
 }
 
 /**
- * Permission : `association.modifier`. Exigences : RF-ADM-020, RF-ADM-024.
+ * Permission : `association.modifier`. Exigences : RF-ADM-020, RF-ADM-024. RG-ASS-003 : `seuilDoubleValidation` modifiable par le président uniquement (403 sinon). Concurrence optimiste : `If-Match` (valeur de l'`ETag` ou du champ `etag`) obligatoire depuis la console.
  * @summary Modifier le profil et les paramètres
  */
-export const patchAssociation = async (association: NonReadonly<Association>, options?: Parameters<typeof clientApi>[1]): Promise<Association> => {
+export const patchAssociation = async (associationMaj: AssociationMaj, options?: Parameters<typeof clientApi>[1]): Promise<Association> => {
 
   return clientApi<Association>(getPatchAssociationUrl(),
   {
     ...options,
     method: 'PATCH',
     headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
-    body: JSON.stringify(association)
+    body: JSON.stringify(associationMaj)
   }
 );}
 
@@ -251,7 +255,7 @@ export const patchAssociation = async (association: NonReadonly<Association>, op
 
 export const getPatchAssociationMutationKey = () => ['patchAssociation'] as const;
 
-export const getPatchAssociationMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+export const getPatchAssociationMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchAssociation>>, TError,PatchAssociationMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof patchAssociation>>, TError,PatchAssociationMutationVariables, TContext> => {
 
@@ -279,15 +283,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PatchAssociationMutationResult = NonNullable<Awaited<ReturnType<typeof patchAssociation>>>
-    export type PatchAssociationMutationBody = NonReadonly<Association>
-    export type PatchAssociationMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>
-    export type PatchAssociationMutationVariables = {data: NonReadonly<Association>}
+    export type PatchAssociationMutationBody = AssociationMaj
+    export type PatchAssociationMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>
+    export type PatchAssociationMutationVariables = {data: AssociationMaj}
 
     /**
- * Permission : `association.modifier`. Exigences : RF-ADM-020, RF-ADM-024.
+ * Permission : `association.modifier`. Exigences : RF-ADM-020, RF-ADM-024. RG-ASS-003 : `seuilDoubleValidation` modifiable par le président uniquement (403 sinon). Concurrence optimiste : `If-Match` (valeur de l'`ETag` ou du champ `etag`) obligatoire depuis la console.
  * @summary Modifier le profil et les paramètres
  */
-export const usePatchAssociation = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+export const usePatchAssociation = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchAssociation>>, TError,PatchAssociationMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchAssociation>>,
@@ -306,7 +310,7 @@ export const usePatchAssociation = <TError = ErrorType<NonAuthentifieResponse | 
 }
 
 /**
- * Permission : `association.modifier`.
+ * Permission : `association.modifier`. PNG, JPEG ou WebP (type vérifié sur le contenu), 2 Mo maximum.
  * @summary Remplacer le logo (multipart)
  */
 export const putAssociationLogo = async (putAssociationLogoBody: PutAssociationLogoBody, options?: Parameters<typeof clientApi>[1]): Promise<Association> => {
@@ -361,7 +365,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PutAssociationLogoMutationVariables = {data: PutAssociationLogoBody}
 
     /**
- * Permission : `association.modifier`.
+ * Permission : `association.modifier`. PNG, JPEG ou WebP (type vérifié sur le contenu), 2 Mo maximum.
  * @summary Remplacer le logo (multipart)
  */
 export const usePutAssociationLogo = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -571,7 +575,7 @@ export const usePostExercices = <TError = ErrorType<NonAuthentifieResponse | Int
 }
 
 /**
- * Permission : `exercice.cloturer`. RG-EXE-003.
+ * Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s'il reste des dépenses soumises ou validées datées dans l'exercice ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.
  * @summary Clôturer un exercice
  */
 export const postExercicesIdCloturer = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Exercice> => {
@@ -591,7 +595,7 @@ export const postExercicesIdCloturer = async (id: string, options?: Parameters<t
 
 export const getPostExercicesIdCloturerMutationKey = () => ['postExercicesIdCloturer'] as const;
 
-export const getPostExercicesIdCloturerMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostExercicesIdCloturerMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postExercicesIdCloturer>>, TError,PostExercicesIdCloturerMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postExercicesIdCloturer>>, TError,PostExercicesIdCloturerMutationVariables, TContext> => {
 
@@ -620,14 +624,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostExercicesIdCloturerMutationResult = NonNullable<Awaited<ReturnType<typeof postExercicesIdCloturer>>>
 
-    export type PostExercicesIdCloturerMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostExercicesIdCloturerMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostExercicesIdCloturerMutationVariables = {id: string}
 
     /**
- * Permission : `exercice.cloturer`. RG-EXE-003.
+ * Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s'il reste des dépenses soumises ou validées datées dans l'exercice ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.
  * @summary Clôturer un exercice
  */
-export const usePostExercicesIdCloturer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostExercicesIdCloturer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postExercicesIdCloturer>>, TError,PostExercicesIdCloturerMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postExercicesIdCloturer>>,

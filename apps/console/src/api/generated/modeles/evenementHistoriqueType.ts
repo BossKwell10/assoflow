@@ -10,6 +10,7 @@ export type EvenementHistoriqueType = typeof EvenementHistoriqueType[keyof typeo
 
 
 export const EvenementHistoriqueType = {
+  creation: 'creation',
   paiement: 'paiement',
   annulation: 'annulation',
   aide: 'aide',

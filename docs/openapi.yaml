@@ -455,6 +455,9 @@ paths:
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -470,16 +473,22 @@ paths:
       - Association
       summary: Modifier le profil et les paramètres
       operationId: patch_association
-      description: 'Permission : `association.modifier`. Exigences : RF-ADM-020, RF-ADM-024.'
+      description: 'Permission : `association.modifier`. Exigences : RF-ADM-020, RF-ADM-024. RG-ASS-003 : `seuilDoubleValidation` modifiable par le président uniquement (403 sinon).
+        Concurrence optimiste : `If-Match` (valeur de l''`ETag` ou du champ `etag`) obligatoire depuis la console.'
+      parameters:
+      - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Association'
+              $ref: '#/components/schemas/AssociationMaj'
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -490,6 +499,10 @@ paths:
           $ref: '#/components/responses/Interdit'
         '422':
           $ref: '#/components/responses/Invalide'
+        '412':
+          $ref: '#/components/responses/PreconditionEchouee'
+        '428':
+          $ref: '#/components/responses/PreconditionRequise'
         default:
           $ref: '#/components/responses/Erreur'
   /association/logo:
@@ -498,7 +511,7 @@ paths:
       - Association
       summary: Remplacer le logo (multipart)
       operationId: put_association_logo
-      description: 'Permission : `association.modifier`.'
+      description: 'Permission : `association.modifier`. PNG, JPEG ou WebP (type vérifié sur le contenu), 2 Mo maximum.'
       requestBody:
         required: true
         content:
@@ -514,6 +527,9 @@ paths:
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -581,7 +597,7 @@ paths:
       - Association
       summary: Clôturer un exercice
       operationId: post_exercices_id_cloturer
-      description: 'Permission : `exercice.cloturer`. RG-EXE-003.'
+      description: 'Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s''il reste des dépenses soumises ou validées datées dans l''exercice ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -604,6 +620,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /acces:
@@ -1035,6 +1053,7 @@ paths:
       - name: etat
         in: query
         required: false
+        description: Par défaut, les membres désactivés sont exclus (RG-MBR-004)
         schema:
           type: string
       - name: categorieId
@@ -1090,7 +1109,7 @@ paths:
       - Membres
       summary: Créer un membre
       operationId: post_membres
-      description: 'Permission : `membre.creer`. Exigences : RF-020.'
+      description: 'Permission : `membre.creer`. Exigences : RF-020. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 avec la fiche existante ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`. Doublon probable (RG-MBR-003) non confirmé → 422 `CONFIRMATION_REQUISE` (`erreurs[0].ref` = id de la fiche existante) ; renvoyer avec `confirmationDoublon: true`.'
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -1098,10 +1117,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Membre'
+              $ref: '#/components/schemas/MembreCreation'
       responses:
         '201':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+        '200':
+          description: Rejeu idempotent (même id, même contenu) — fiche existante
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -1112,6 +1143,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/doublons:
@@ -1300,6 +1333,9 @@ paths:
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -1317,7 +1353,7 @@ paths:
       - Membres
       summary: Modifier un membre
       operationId: patch_membres_id
-      description: 'Permission : `membre.modifier`.'
+      description: 'Permission : `membre.modifier`. Concurrence optimiste : `If-Match` (valeur de l''`ETag` ou du champ `etag`) obligatoire depuis la console.'
       parameters:
       - name: id
         in: path
@@ -1325,6 +1361,7 @@ paths:
         schema:
           type: string
           format: uuid
+      - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
@@ -1334,6 +1371,9 @@ paths:
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -1346,6 +1386,10 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '412':
+          $ref: '#/components/responses/PreconditionEchouee'
+        '428':
+          $ref: '#/components/responses/PreconditionRequise'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/suspendre:
@@ -6028,7 +6072,32 @@ components:
         type: string
         maxLength: 100
       description: Clé unique (UUID) ; rejouer la même requête renvoie la même réponse pendant 7 jours
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Valeur de l'`ETag` (ou du champ `etag`) lue avant la modification. Obligatoire depuis la console
+        (428 `PRECONDITION_REQUISE` sinon) ; 412 `PRECONDITION_ECHOUEE` si la ressource a changé depuis (docs/07 §5).
+  headers:
+    ETag:
+      description: Version opaque de la ressource, à renvoyer dans `If-Match` (identique au champ `etag` du corps)
+      schema:
+        type: string
   responses:
+    PreconditionEchouee:
+      description: La ressource a été modifiée depuis sa lecture (PRECONDITION_ECHOUEE) — relire puis réessayer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
+    PreconditionRequise:
+      description: En-tête If-Match obligatoire depuis la console (PRECONDITION_REQUISE)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
     NonAuthentifie:
       description: Jeton absent, expiré ou révoqué
       content:
@@ -6043,6 +6112,12 @@ components:
             $ref: '#/components/schemas/Erreur'
     NonTrouve:
       description: Ressource introuvable (y compris d'un autre tenant)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
+    Conflit:
+      description: Conflit d'idempotence (CONFLIT_IDEMPOTENCE) ou transition d'état impossible (ETAT_INCOMPATIBLE)
       content:
         application/problem+json:
           schema:
@@ -6109,6 +6184,11 @@ components:
                 type: string
               message:
                 type: string
+              ref:
+                type:
+                - string
+                - 'null'
+                description: Identifiant d'une ressource liée (ex. fiche existante d'un doublon probable)
       required:
       - type
       - title
@@ -6328,6 +6408,10 @@ components:
         quotaSmsMensuel:
           type: integer
           readOnly: true
+        etag:
+          type: string
+          readOnly: true
+          description: Version opaque (identique à l'en-tête ETag), à renvoyer dans If-Match
       required:
       - id
       - nom
@@ -6335,6 +6419,78 @@ components:
       - region
       - devise
       - statut
+    AssociationMaj:
+      type: object
+      description: Modification partielle du profil (champs envoyés seulement)
+      properties:
+        nom:
+          type: string
+        sigle:
+          type:
+          - string
+          - 'null'
+        type:
+          type: string
+          enum:
+          - association
+          - mutuelle_developpement
+          - mutuelle_sociale
+          - autre
+        village:
+          type: string
+        sousPrefecture:
+          type:
+          - string
+          - 'null'
+        region:
+          type: string
+        dateCreation:
+          type:
+          - string
+          - 'null'
+          format: date
+        recepisseNumero:
+          type:
+          - string
+          - 'null'
+        recepisseDate:
+          type:
+          - string
+          - 'null'
+          format: date
+        prefectureDepot:
+          type:
+          - string
+          - 'null'
+        telephone:
+          type:
+          - string
+          - 'null'
+          pattern: ^\+[1-9][0-9]{7,14}$
+        email:
+          type:
+          - string
+          - 'null'
+          format: email
+        moisDebutExercice:
+          type: integer
+          minimum: 1
+          maximum: 12
+        seuilDoubleValidation:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Montant en FCFA (XOF), entier. Président uniquement (RG-ASS-003)
+        seuilAlerteSolde:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Montant en FCFA (XOF), entier
+        joursRetardDormant:
+          type: integer
+          minimum: 1
+        journalPublicActif:
+          type: boolean
     Exercice:
       type: object
       properties:
@@ -6876,6 +7032,21 @@ components:
         doublonProbable:
           type: boolean
           readOnly: true
+        doublonDe:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          readOnly: true
+          description: Fiche probablement identique (RG-MBR-003), renseignée tant que le doublon n'est pas écarté
+        anonymise:
+          type: boolean
+          readOnly: true
+          description: Fiche anonymisée (RG-MBR-009, irréversible)
+        etag:
+          type: string
+          readOnly: true
+          description: Version opaque (identique à l'en-tête ETag), à renvoyer dans If-Match
         createdAt:
           type: string
           format: date-time
@@ -6962,6 +7133,33 @@ components:
           type:
           - string
           - 'null'
+    MembreCreation:
+      description: Création d'un membre (console). Le consentement au traitement des données est obligatoire (docs/08 A4).
+      allOf:
+      - $ref: '#/components/schemas/Membre'
+      - type: object
+        properties:
+          consentement:
+            type: object
+            description: Accord du membre pour le traitement de ses données, recueilli par le bureau (RF-SUP-054)
+            properties:
+              traitementDonnees:
+                type: boolean
+                const: true
+              canal:
+                type: string
+                enum:
+                - console
+                - papier
+            required:
+            - traitementDonnees
+            - canal
+          confirmationDoublon:
+            type: boolean
+            default: false
+            description: Enregistrer malgré un doublon probable signalé par 422 CONFIRMATION_REQUISE (RG-MBR-003)
+        required:
+        - consentement
     SituationMembre:
       type: object
       properties:
@@ -7003,6 +7201,7 @@ components:
         type:
           type: string
           enum:
+          - creation
           - paiement
           - annulation
           - aide

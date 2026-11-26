@@ -55,4 +55,6 @@ export interface Association {
   readonly statut: AssociationStatut;
   readonly plan?: AssociationPlan;
   readonly quotaSmsMensuel?: number;
+  /** Version opaque (identique à l'en-tête ETag), à renvoyer dans If-Match */
+  readonly etag?: string;
 }

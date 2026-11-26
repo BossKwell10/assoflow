@@ -13,6 +13,7 @@ export type GetMembresParams = {
   /** Nom, prénoms, numéro ou téléphone */
   q?: string;
   statutAdhesion?: string;
+  /** Par défaut, les membres désactivés sont exclus (RG-MBR-004) */
   etat?: string;
   categorieId?: string;
   familleId?: string;

@@ -10,4 +10,9 @@ export type ErreurErreursItem = {
   champ?: string;
   code?: string;
   message?: string;
+  /**
+     * Identifiant d'une ressource liée (ex. fiche existante d'un doublon probable)
+     * @nullable
+     */
+  ref?: string | null;
 };
