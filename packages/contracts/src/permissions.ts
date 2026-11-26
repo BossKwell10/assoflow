@@ -132,3 +132,62 @@ export const ROLES_SYSTEME: Record<
     permissions: ['association.lire', 'projet.lire', 'moi.situation', 'moi.journal'],
   },
 };
+
+/** Libellés du catalogue (`GET /v1/permissions`), dans l'ordre de docs/04 §4. */
+export const LIBELLES_PERMISSIONS: Record<Permission, string> = {
+  'association.lire': "Consulter l'association",
+  'association.modifier': "Modifier le profil et les paramètres de l'association",
+  'exercice.gerer': 'Gérer les exercices',
+  'exercice.cloturer': 'Clôturer un exercice',
+  'utilisateur.lire': 'Consulter les accès',
+  'utilisateur.gerer': 'Gérer les accès (invitation, rôle, révocation)',
+  'role.gerer': 'Gérer les rôles',
+  'delegation.gerer': 'Gérer les délégations',
+  'membre.lire': 'Consulter les membres',
+  'membre.creer': 'Créer des membres',
+  'membre.modifier': 'Modifier des membres',
+  'membre.importer': 'Importer des membres',
+  'membre.suspendre': 'Suspendre, réactiver, désactiver des membres',
+  'membre.anonymiser': 'Anonymiser un membre',
+  'cotisation.lire': 'Consulter les cotisations',
+  'cotisation.gerer': 'Gérer les campagnes et échéanciers',
+  'cotisation.exonerer': 'Exonérer une échéance',
+  'paiement.enregistrer': 'Enregistrer des paiements',
+  'paiement.annuler': 'Annuler ses paiements récents',
+  'paiement.annuler_tout': 'Annuler tout paiement',
+  'depense.lire': 'Consulter les dépenses',
+  'depense.creer': 'Créer des dépenses',
+  'depense.valider': 'Valider des dépenses',
+  'depense.payer': 'Payer des dépenses',
+  'depense.annuler': 'Annuler des dépenses',
+  'tresorerie.lire': 'Consulter la trésorerie',
+  'tresorerie.transferer': 'Transférer entre comptes et gérer les comptes',
+  'tresorerie.ajuster': 'Ajuster la trésorerie',
+  'projet.lire': 'Consulter les projets',
+  'projet.gerer': 'Gérer les projets',
+  'reunion.gerer': 'Gérer les réunions',
+  'document.lire': 'Consulter les documents',
+  'document.gerer': 'Gérer les documents',
+  'communication.annoncer': 'Publier des annonces',
+  'communication.modeles': 'Gérer les modèles de messages',
+  'rapport.lire': 'Consulter les rapports',
+  'rapport.exporter': 'Exporter les rapports',
+  'audit.lire': "Consulter le journal d'audit",
+  'audit.exporter': "Exporter le journal d'audit",
+  'support.consentir': 'Consentir aux accès du support',
+  'moi.situation': 'Consulter sa situation',
+  'moi.journal': 'Consulter le journal public et les annonces',
+};
+
+/** Permissions des rôles plateforme (docs/04 §4). */
+export const PERMISSIONS_ROLES_PLATEFORME: Record<
+  'super_admin' | 'support',
+  readonly PermissionPlateforme[]
+> = {
+  super_admin: PERMISSIONS_PLATEFORME,
+  support: ['pf.support.acceder', 'pf.statistiques.lire'],
+};
+
+export function estPermission(code: string): code is Permission {
+  return (PERMISSIONS as readonly string[]).includes(code);
+}
