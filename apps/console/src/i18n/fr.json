@@ -73,7 +73,7 @@
   },
   "activationTotp": {
     "titre": "Activer la vérification en deux étapes",
-    "intro": "Membre du bureau, vous devez protéger votre compte par un second facteur avant d’accéder à la console.",
+    "intro": "Membre du bureau, vous devez protéger votre compte par un second facteur avant votre première connexion à la console.",
     "etape1": "1. Scannez ce QR code avec une application d’authentification (Google Authenticator, Microsoft Authenticator, FreeOTP…).",
     "qrAlt": "QR code d’activation de la vérification en deux étapes",
     "secretManuel": "Ou saisissez cette clé manuellement :",
@@ -84,8 +84,7 @@
     "telecharger": "Télécharger (.txt)",
     "fichierEntete": "AssoFlow — codes de secours (chaque code ne sert qu’une fois)",
     "conserve": "J’ai conservé mes codes de secours",
-    "acceder": "Accéder à la console",
-    "erreurDemarrage": "Impossible de démarrer l’activation."
+    "acceder": "Accéder à la console"
   },
   "otp": {
     "titreOubli": "Mot de passe oublié",
@@ -104,12 +103,16 @@
     "nouveauMotDePasse": "Nouveau mot de passe",
     "confirmation": "Confirmer le mot de passe",
     "differents": "Les deux mots de passe ne correspondent pas.",
-    "cgu": "J’accepte les conditions générales d’utilisation d’AssoFlow et le traitement de mes données personnelles par mon association.",
-    "cguRequises": "Vous devez accepter les conditions pour continuer.",
+    "cgu": "J’accepte les conditions générales d’utilisation d’AssoFlow.",
+    "cguRequises": "Vous devez accepter les conditions générales pour continuer.",
     "enregistrer": "Enregistrer le mot de passe",
     "motDePasseFaible": "Ce mot de passe est trop courant ou trop facile à deviner.",
     "succes": "Votre mot de passe est enregistré. Vous pouvez vous connecter.",
-    "retourConnexion": "Retour à la connexion"
+    "retourConnexion": "Retour à la connexion",
+    "traitementDonnees": "J’accepte le traitement de mes données personnelles par mon association et AssoFlow.",
+    "traitementRequis": "Vous devez accepter le traitement de vos données pour continuer.",
+    "consentementRequis": "Les conditions d’utilisation ont été mises à jour : acceptez-les pour continuer.",
+    "tropDeDemandes": "Trop de demandes de code pour ce numéro. Réessayez dans {duree}."
   },
   "regles": {
     "titre": "Votre mot de passe doit :",

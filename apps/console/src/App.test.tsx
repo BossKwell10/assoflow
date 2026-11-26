@@ -1,37 +1,27 @@
-import { createMemoryHistory, createRouter } from '@tanstack/react-router';
-import { render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { App } from './App';
-import { routeTree } from './router';
-
-const routeurSur = (chemin: string) =>
-  createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [chemin] }) });
+import { screen } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
+import { describe, expect, it } from 'vitest';
+import { session } from './test/donnees';
+import { rendreConsole } from './test/rendu';
+import { serveur } from './test/serveur';
 
 describe('console', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it('affiche la navigation et le tableau de bord', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ statut: 'ok', dependances: { postgres: 'ok' } }), {
-            headers: { 'content-type': 'application/json' },
-          }),
-      ),
-    );
-    render(<App routeur={routeurSur('/')} />);
+    rendreConsole('/', { session: session() });
     expect(await screen.findByRole('heading', { name: 'Tableau de bord' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Navigation principale' })).toBeInTheDocument();
     expect(await screen.findByText('Opérationnelle')).toBeInTheDocument();
   });
 
   it('signale une API injoignable', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => new Response('', { status: 502 })),
-    );
-    render(<App routeur={routeurSur('/')} />);
+    serveur.use(http.get('*/health/ready', () => new HttpResponse('', { status: 502 })));
+    rendreConsole('/', { session: session() });
     expect(await screen.findByText('Injoignable')).toBeInTheDocument();
+  });
+
+  it('exige une session : sans cookie de refresh, la racine mène à la connexion', async () => {
+    const { routeur } = rendreConsole('/');
+    expect(await screen.findByRole('heading', { name: 'Connexion' })).toBeInTheDocument();
+    expect(routeur.state.location.pathname).toBe('/connexion');
   });
 });

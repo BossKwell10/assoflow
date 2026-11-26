@@ -1,12 +1,10 @@
+import { ENTETE_CONSOLE } from '@assoflow/contracts';
 import { ErreurApi, versErreurApi } from './erreurs';
 import { lireJeton, ouvrirSession, perdreSession } from './jeton';
 import type { Session } from './generated/modeles';
 
 /** Type d'erreur des hooks générés par orval. */
 export type ErrorType<Erreur> = Erreur extends unknown ? ErreurApi : never;
-
-/** En-tête anti-CSRF exigé par `POST /v1/auth/refresh` côté console (docs/04 §3). */
-export const EN_TETE_CONSOLE = { 'X-Requested-With': 'assoflow-console' } as const;
 
 /** Routes où un 401 est une réponse métier (identifiants, OTP, TOTP) et non une session expirée. */
 const ROUTES_SANS_REFRESH = [
@@ -34,9 +32,11 @@ function urlComplete(url: string): string {
 async function executer(url: string, init: RequestInit): Promise<Response> {
   const entetes = new Headers(init.headers);
   if (!entetes.has('Accept')) entetes.set('Accept', 'application/json');
-  entetes.set('X-Requested-With', EN_TETE_CONSOLE['X-Requested-With']);
+  // Anti-CSRF exigé par `POST /v1/auth/refresh` côté console (docs/04 §3, §10).
+  entetes.set(ENTETE_CONSOLE.nom, ENTETE_CONSOLE.valeur);
+  // Un Authorization explicite (jeton intermédiaire d'activation TOTP) n'est jamais remplacé.
   const jeton = lireJeton();
-  if (jeton) entetes.set('Authorization', `Bearer ${jeton}`);
+  if (jeton && !entetes.has('Authorization')) entetes.set('Authorization', `Bearer ${jeton}`);
   return fetch(urlComplete(url), { ...init, headers: entetes, credentials: 'include' });
 }
 
@@ -83,8 +83,9 @@ async function lireCorps<T>(reponse: Response): Promise<T> {
  */
 export async function clientApi<T>(url: string, init: RequestInit = {}): Promise<T> {
   let reponse = await executer(url, init);
+  const jetonExplicite = new Headers(init.headers).has('Authorization');
 
-  if (reponse.status === 401 && !sansRefresh(url)) {
+  if (reponse.status === 401 && !sansRefresh(url) && !jetonExplicite) {
     const erreur = await versErreurApi(reponse);
     if (erreur.code !== 'JETON_EXPIRE') {
       // Session révoquée, appareil révoqué, jeton absent : retour à la connexion.
