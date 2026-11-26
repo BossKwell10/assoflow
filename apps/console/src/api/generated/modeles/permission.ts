@@ -7,8 +7,8 @@
  */
 
 export interface Permission {
-  code?: string;
-  module?: string;
-  libelle?: string;
-  reserveePresident?: boolean;
+  code: string;
+  module: string;
+  libelle: string;
+  reserveePresident: boolean;
 }

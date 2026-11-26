@@ -5,9 +5,16 @@
  * API du backend AssoFlow (console web et app mobile). Conventions : voir docs/07-contrat-api.md. Toutes les routes sont préfixées par /v1. Montants en FCFA entiers. Dates ISO 8601 UTC.
  * OpenAPI spec version: 1.0.0
  */
+import type { PostAuthMotDePasseBodyCanal } from './postAuthMotDePasseBodyCanal';
 
 export type PostAuthMotDePasseBody = {
   jetonOtp: string;
   /** @minLength 10 */
   motDePasse: string;
+  /** Acceptation des CGU (version courante) */
+  accepteCgu?: boolean;
+  /** Consentement au traitement des données personnelles */
+  accepteTraitementDonnees?: boolean;
+  /** Canal de recueil du consentement (défaut mobile) */
+  canal?: PostAuthMotDePasseBodyCanal;
 };

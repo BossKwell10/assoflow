@@ -16,11 +16,11 @@ export interface UtilisateurMoi {
      */
   telephone: string;
   /** @nullable */
-  email?: string | null;
+  email: string | null;
   nom: string;
   prenoms: string;
-  totpActif?: boolean;
+  totpActif: boolean;
   /** @nullable */
-  rolePlateforme?: UtilisateurMoiRolePlateforme;
+  rolePlateforme: UtilisateurMoiRolePlateforme;
   acces: AccesResume[];
 }

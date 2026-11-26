@@ -7,6 +7,6 @@
  */
 
 export type AccesResumeRole = {
-  code?: string;
-  libelle?: string;
+  code: string;
+  libelle: string;
 };

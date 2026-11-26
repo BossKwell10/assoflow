@@ -68,8 +68,7 @@ paths:
         '422':
           $ref: '#/components/responses/Invalide'
         '429':
-          $ref: '#/components/responses/Erreur'
-          description: Plus de 3 demandes pour ce numéro en 15 min (en-tête Retry-After)
+          $ref: '#/components/responses/TropDeRequetes'
         default:
           $ref: '#/components/responses/Erreur'
       security: []
@@ -202,8 +201,7 @@ paths:
                 - $ref: '#/components/schemas/Session'
                 - $ref: '#/components/schemas/EtapeTotp'
         '423':
-          $ref: '#/components/responses/Erreur'
-          description: Compte verrouillé
+          $ref: '#/components/responses/Verrouille'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -237,6 +235,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Session'
+        '423':
+          $ref: '#/components/responses/Verrouille'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -6059,6 +6059,28 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Erreur'
+    Verrouille:
+      description: Compte verrouillé après des échecs consécutifs (COMPTE_VERROUILLE)
+      headers:
+        Retry-After:
+          description: Secondes avant la fin du verrouillage
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
+    TropDeRequetes:
+      description: Plus de 3 demandes d'OTP pour ce numéro en 15 min (TROP_DE_REQUETES)
+      headers:
+        Retry-After:
+          description: Secondes avant de pouvoir redemander un code
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
   schemas:
     Erreur:
       type: object
@@ -6121,10 +6143,18 @@ components:
               type: string
             libelle:
               type: string
+          required:
+          - code
+          - libelle
         permissions:
           type: array
           items:
             type: string
+      required:
+      - associationId
+      - associationNom
+      - role
+      - permissions
     UtilisateurMoi:
       type: object
       properties:
@@ -6161,8 +6191,11 @@ components:
       required:
       - id
       - telephone
+      - email
       - nom
       - prenoms
+      - totpActif
+      - rolePlateforme
       - acces
     Session:
       type: object
@@ -6522,6 +6555,13 @@ components:
               format: date-time
             verrouille:
               type: boolean
+          required:
+          - id
+          - telephone
+          - nom
+          - prenoms
+          - derniereConnexion
+          - verrouille
         role:
           $ref: '#/components/schemas/Role'
         membreId:
@@ -6545,6 +6585,14 @@ components:
           - actif
           - revoque
           - expire
+      required:
+      - id
+      - user
+      - role
+      - membreId
+      - mandatDebut
+      - mandatFin
+      - statut
     AccesInvitation:
       type: object
       properties:
@@ -6642,6 +6690,11 @@ components:
           type: string
         reserveePresident:
           type: boolean
+      required:
+      - code
+      - module
+      - libelle
+      - reserveePresident
     CategorieMembre:
       type: object
       properties:

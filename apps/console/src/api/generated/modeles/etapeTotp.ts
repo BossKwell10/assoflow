@@ -7,6 +7,9 @@
  */
 import type { EtapeTotpEtape } from './etapeTotpEtape';
 
+/**
+ * `totp` : saisir le code via POST /auth/totp. `totp_activation` : TOTP exigé mais pas encore activé ; le jeton intermédiaire sert de Bearer pour /auth/totp/activation puis /auth/totp/confirmation. Jeton valable 5 min.
+ */
 export interface EtapeTotp {
   etape: EtapeTotpEtape;
   jetonIntermediaire: string;

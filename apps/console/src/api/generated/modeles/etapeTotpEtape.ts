@@ -11,4 +11,5 @@ export type EtapeTotpEtape = typeof EtapeTotpEtape[keyof typeof EtapeTotpEtape];
 
 export const EtapeTotpEtape = {
   totp: 'totp',
+  totp_activation: 'totp_activation',
 } as const;

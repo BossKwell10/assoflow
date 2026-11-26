@@ -5,7 +5,9 @@
  * API du backend AssoFlow (console web et app mobile). Conventions : voir docs/07-contrat-api.md. Toutes les routes sont préfixées par /v1. Montants en FCFA entiers. Dates ISO 8601 UTC.
  * OpenAPI spec version: 1.0.0
  */
+import type { Session } from './session';
 
 export type PostAuthTotpConfirmation200 = {
-  codesSecours?: string[];
+  codesSecours: string[];
+  session?: Session;
 };

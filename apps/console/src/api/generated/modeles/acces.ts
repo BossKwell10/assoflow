@@ -10,14 +10,14 @@ import type { AccesUser } from './accesUser';
 import type { Role } from './role';
 
 export interface Acces {
-  id?: string;
-  user?: AccesUser;
-  role?: Role;
+  id: string;
+  user: AccesUser;
+  role: Role;
   /** @nullable */
-  membreId?: string | null;
+  membreId: string | null;
   /** @nullable */
-  mandatDebut?: string | null;
+  mandatDebut: string | null;
   /** @nullable */
-  mandatFin?: string | null;
-  statut?: AccesStatut;
+  mandatFin: string | null;
+  statut: AccesStatut;
 }

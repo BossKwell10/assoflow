@@ -44,7 +44,9 @@ import type {
   PostAuthTotpConfirmation200,
   PostAuthTotpConfirmationBody,
   Session,
-  UtilisateurMoi
+  TropDeRequetesResponse,
+  UtilisateurMoi,
+  VerrouilleResponse
 } from '../modeles';
 
 import { clientApi } from '../../client';
@@ -123,7 +125,7 @@ export const postAuthOtpDemander = async (postAuthOtpDemanderBody: PostAuthOtpDe
 
 export const getPostAuthOtpDemanderMutationKey = () => ['postAuthOtpDemander'] as const;
 
-export const getPostAuthOtpDemanderMutationOptions = <TError = ErrorType<InvalideResponse | ErreurResponse>,
+export const getPostAuthOtpDemanderMutationOptions = <TError = ErrorType<InvalideResponse | TropDeRequetesResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthOtpDemander>>, TError,PostAuthOtpDemanderMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postAuthOtpDemander>>, TError,PostAuthOtpDemanderMutationVariables, TContext> => {
 
@@ -152,14 +154,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostAuthOtpDemanderMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthOtpDemander>>>
     export type PostAuthOtpDemanderMutationBody = PostAuthOtpDemanderBody
-    export type PostAuthOtpDemanderMutationError = ErrorType<InvalideResponse | ErreurResponse>
+    export type PostAuthOtpDemanderMutationError = ErrorType<InvalideResponse | TropDeRequetesResponse | ErreurResponse>
     export type PostAuthOtpDemanderMutationVariables = {data: PostAuthOtpDemanderBody}
 
     /**
  * Exigences : RF-001, RF-004.
  * @summary Demander un code OTP par SMS
  */
-export const usePostAuthOtpDemander = <TError = ErrorType<InvalideResponse | ErreurResponse>,
+export const usePostAuthOtpDemander = <TError = ErrorType<InvalideResponse | TropDeRequetesResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthOtpDemander>>, TError,PostAuthOtpDemanderMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postAuthOtpDemander>>,
@@ -253,7 +255,7 @@ export const usePostAuthOtpVerifier = <TError = ErrorType<InvalideResponse | Err
 }
 
 /**
- * Exigences : RF-004, RF-SUP-053.
+ * Exigences : RF-004, RF-SUP-053, RF-SUP-054. Le jeton OTP (but `inscription` ou `reinitialisation`) est à usage unique. À la première définition (ou à un changement de version des textes), `accepteCgu` et `accepteTraitementDonnees` doivent valoir true (sinon 422 VALIDATION). Révoque toutes les sessions.
  * @summary Définir ou réinitialiser le mot de passe (après OTP)
  */
 export const postAuthMotDePasse = async (postAuthMotDePasseBody: PostAuthMotDePasseBody, options?: Parameters<typeof clientApi>[1]): Promise<void> => {
@@ -306,7 +308,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostAuthMotDePasseMutationVariables = {data: PostAuthMotDePasseBody}
 
     /**
- * Exigences : RF-004, RF-SUP-053.
+ * Exigences : RF-004, RF-SUP-053, RF-SUP-054. Le jeton OTP (but `inscription` ou `reinitialisation`) est à usage unique. À la première définition (ou à un changement de version des textes), `accepteCgu` et `accepteTraitementDonnees` doivent valoir true (sinon 422 VALIDATION). Révoque toutes les sessions.
  * @summary Définir ou réinitialiser le mot de passe (après OTP)
  */
 export const usePostAuthMotDePasse = <TError = ErrorType<InvalideResponse | ErreurResponse>,
@@ -348,7 +350,7 @@ export const postAuthConnexion = async (postAuthConnexionBody: PostAuthConnexion
 
 export const getPostAuthConnexionMutationKey = () => ['postAuthConnexion'] as const;
 
-export const getPostAuthConnexionMutationOptions = <TError = ErrorType<InvalideResponse | ErreurResponse>,
+export const getPostAuthConnexionMutationOptions = <TError = ErrorType<InvalideResponse | VerrouilleResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthConnexion>>, TError,PostAuthConnexionMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postAuthConnexion>>, TError,PostAuthConnexionMutationVariables, TContext> => {
 
@@ -377,14 +379,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostAuthConnexionMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthConnexion>>>
     export type PostAuthConnexionMutationBody = PostAuthConnexionBody
-    export type PostAuthConnexionMutationError = ErrorType<InvalideResponse | ErreurResponse>
+    export type PostAuthConnexionMutationError = ErrorType<InvalideResponse | VerrouilleResponse | ErreurResponse>
     export type PostAuthConnexionMutationVariables = {data: PostAuthConnexionBody}
 
     /**
  * Exigences : RF-002, RF-003, RF-005.
  * @summary Se connecter
  */
-export const usePostAuthConnexion = <TError = ErrorType<InvalideResponse | ErreurResponse>,
+export const usePostAuthConnexion = <TError = ErrorType<InvalideResponse | VerrouilleResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthConnexion>>, TError,PostAuthConnexionMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postAuthConnexion>>,
@@ -423,7 +425,7 @@ export const postAuthTotp = async (postAuthTotpBody: PostAuthTotpBody, options?:
 
 export const getPostAuthTotpMutationKey = () => ['postAuthTotp'] as const;
 
-export const getPostAuthTotpMutationOptions = <TError = ErrorType<InvalideResponse | ErreurResponse>,
+export const getPostAuthTotpMutationOptions = <TError = ErrorType<InvalideResponse | VerrouilleResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthTotp>>, TError,PostAuthTotpMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postAuthTotp>>, TError,PostAuthTotpMutationVariables, TContext> => {
 
@@ -452,14 +454,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostAuthTotpMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthTotp>>>
     export type PostAuthTotpMutationBody = PostAuthTotpBody
-    export type PostAuthTotpMutationError = ErrorType<InvalideResponse | ErreurResponse>
+    export type PostAuthTotpMutationError = ErrorType<InvalideResponse | VerrouilleResponse | ErreurResponse>
     export type PostAuthTotpMutationVariables = {data: PostAuthTotpBody}
 
     /**
  * Exigences : RF-003.
  * @summary Second facteur TOTP
  */
-export const usePostAuthTotp = <TError = ErrorType<InvalideResponse | ErreurResponse>,
+export const usePostAuthTotp = <TError = ErrorType<InvalideResponse | VerrouilleResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthTotp>>, TError,PostAuthTotpMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postAuthTotp>>,
@@ -478,7 +480,7 @@ export const usePostAuthTotp = <TError = ErrorType<InvalideResponse | ErreurResp
 }
 
 /**
- * Exigences : RF-003.
+ * Exigences : RF-003. Bearer = access token, ou jeton intermédiaire `totp_activation` reçu à la connexion (activation obligatoire avant la première connexion console d'un membre du bureau). 409 si le TOTP est déjà actif.
  * @summary Démarrer l'activation TOTP
  */
 export const postAuthTotpActivation = async ( options?: Parameters<typeof clientApi>[1]): Promise<PostAuthTotpActivation200> => {
@@ -531,7 +533,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
     /**
- * Exigences : RF-003.
+ * Exigences : RF-003. Bearer = access token, ou jeton intermédiaire `totp_activation` reçu à la connexion (activation obligatoire avant la première connexion console d'un membre du bureau). 409 si le TOTP est déjà actif.
  * @summary Démarrer l'activation TOTP
  */
 export const usePostAuthTotpActivation = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -553,7 +555,7 @@ export const usePostAuthTotpActivation = <TError = ErrorType<NonAuthentifieRespo
 }
 
 /**
- * Exigences : RF-003.
+ * Exigences : RF-003. Les 10 codes de secours ne sont affichés qu'une fois. Appelée avec le jeton intermédiaire `totp_activation`, termine aussi la connexion : `session` est alors présente (et le cookie de refresh posé pour la console). Code incorrect : 422 VALIDATION (champ `code`).
  * @summary Confirmer TOTP et obtenir les codes de secours
  */
 export const postAuthTotpConfirmation = async (postAuthTotpConfirmationBody: PostAuthTotpConfirmationBody, options?: Parameters<typeof clientApi>[1]): Promise<PostAuthTotpConfirmation200> => {
@@ -606,7 +608,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostAuthTotpConfirmationMutationVariables = {data: PostAuthTotpConfirmationBody}
 
     /**
- * Exigences : RF-003.
+ * Exigences : RF-003. Les 10 codes de secours ne sont affichés qu'une fois. Appelée avec le jeton intermédiaire `totp_activation`, termine aussi la connexion : `session` est alors présente (et le cookie de refresh posé pour la console). Code incorrect : 422 VALIDATION (champ `code`).
  * @summary Confirmer TOTP et obtenir les codes de secours
  */
 export const usePostAuthTotpConfirmation = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -628,7 +630,7 @@ export const usePostAuthTotpConfirmation = <TError = ErrorType<NonAuthentifieRes
 }
 
 /**
- * Console : cookie HttpOnly + en-tête X-Requested-With. Mobile : refreshToken dans le corps.
+ * Console : cookie HttpOnly `assoflow_refresh` (Path=/v1/auth) + en-tête `X-Requested-With: assoflow-console`, corps `{}`. Mobile : refreshToken dans le corps. Rotation à chaque usage ; la présentation d'un refresh déjà utilisé révoque toute la session (401 SESSION_REVOQUEE).
  * @summary Renouveler l'access token
  */
 export const postAuthRefresh = async (postAuthRefreshBody: PostAuthRefreshBody, options?: Parameters<typeof clientApi>[1]): Promise<Session> => {
@@ -681,7 +683,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostAuthRefreshMutationVariables = {data: PostAuthRefreshBody}
 
     /**
- * Console : cookie HttpOnly + en-tête X-Requested-With. Mobile : refreshToken dans le corps.
+ * Console : cookie HttpOnly `assoflow_refresh` (Path=/v1/auth) + en-tête `X-Requested-With: assoflow-console`, corps `{}`. Mobile : refreshToken dans le corps. Rotation à chaque usage ; la présentation d'un refresh déjà utilisé révoque toute la session (401 SESSION_REVOQUEE).
  * @summary Renouveler l'access token
  */
 export const usePostAuthRefresh = <TError = ErrorType<InvalideResponse | ErreurResponse>,
@@ -874,6 +876,7 @@ export const getPostAuthContexteUrl = () => {
 }
 
 /**
+ * Renvoie un nouvel access token portant `aid` (le refresh token n'est pas renouvelé). 403 ACCES_REVOQUE sans accès actif au mandat en cours. À la connexion, l'association est choisie d'office si l'utilisateur n'en a qu'une.
  * @summary Choisir l'association active
  */
 export const postAuthContexte = async (postAuthContexteBody: PostAuthContexteBody, options?: Parameters<typeof clientApi>[1]): Promise<Session> => {
@@ -925,7 +928,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostAuthContexteMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>
     export type PostAuthContexteMutationVariables = {data: PostAuthContexteBody}
 
-    /** @summary Choisir l'association active */
+    /**
+ * Renvoie un nouvel access token portant `aid` (le refresh token n'est pas renouvelé). 403 ACCES_REVOQUE sans accès actif au mandat en cours. À la connexion, l'association est choisie d'office si l'utilisateur n'en a qu'une.
+ * @summary Choisir l'association active
+ */
 export const usePostAuthContexte = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthContexte>>, TError,PostAuthContexteMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<

@@ -8,8 +8,8 @@
 import type { AccesResumeRole } from './accesResumeRole';
 
 export interface AccesResume {
-  associationId?: string;
-  associationNom?: string;
-  role?: AccesResumeRole;
-  permissions?: string[];
+  associationId: string;
+  associationNom: string;
+  role: AccesResumeRole;
+  permissions: string[];
 }

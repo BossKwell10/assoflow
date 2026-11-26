@@ -7,15 +7,15 @@
  */
 
 export type AccesUser = {
-  id?: string;
+  id: string;
   /**
      * Téléphone E.164
      * @pattern ^\+[1-9][0-9]{7,14}$
      */
-  telephone?: string;
-  nom?: string;
-  prenoms?: string;
+  telephone: string;
+  nom: string;
+  prenoms: string;
   /** @nullable */
-  derniereConnexion?: string | null;
-  verrouille?: boolean;
+  derniereConnexion: string | null;
+  verrouille: boolean;
 };
