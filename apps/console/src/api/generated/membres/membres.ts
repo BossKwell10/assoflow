@@ -28,6 +28,7 @@ import type {
   Acces,
   AyantDroit,
   CategorieMembre,
+  ConflitResponse,
   ErreurResponse,
   Famille,
   GetFamillesParams,
@@ -36,6 +37,7 @@ import type {
   InterditResponse,
   InvalideResponse,
   Membre,
+  MembreCreation,
   MembreMaj,
   Motif,
   NonAuthentifieResponse,
@@ -46,6 +48,8 @@ import type {
   PostMembresIdDoublonBody,
   PostMembresImportBody,
   PostMembresImportTacheIdConfirmerBody,
+  PreconditionEchoueeResponse,
+  PreconditionRequiseResponse,
   PutMembresIdPhotoBody,
   RapportImport,
   SituationMembre,
@@ -255,17 +259,17 @@ export const getPostMembresUrl = () => {
 }
 
 /**
- * Permission : `membre.creer`. Exigences : RF-020.
+ * Permission : `membre.creer`. Exigences : RF-020. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 avec la fiche existante ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`. Doublon probable (RG-MBR-003) non confirmé → 422 `CONFIRMATION_REQUISE` (`erreurs[0].ref` = id de la fiche existante) ; renvoyer avec `confirmationDoublon: true`.
  * @summary Créer un membre
  */
-export const postMembres = async (membre: NonReadonly<Membre>, options?: Parameters<typeof clientApi>[1]): Promise<Membre> => {
+export const postMembres = async (membreCreation: NonReadonly<MembreCreation>, options?: Parameters<typeof clientApi>[1]): Promise<Membre> => {
 
   return clientApi<Membre>(getPostMembresUrl(),
   {
     ...options,
     method: 'POST',
     headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
-    body: JSON.stringify(membre)
+    body: JSON.stringify(membreCreation)
   }
 );}
 
@@ -275,7 +279,7 @@ export const postMembres = async (membre: NonReadonly<Membre>, options?: Paramet
 
 export const getPostMembresMutationKey = () => ['postMembres'] as const;
 
-export const getPostMembresMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+export const getPostMembresMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembres>>, TError,PostMembresMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembres>>, TError,PostMembresMutationVariables, TContext> => {
 
@@ -303,15 +307,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostMembresMutationResult = NonNullable<Awaited<ReturnType<typeof postMembres>>>
-    export type PostMembresMutationBody = NonReadonly<Membre>
-    export type PostMembresMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>
-    export type PostMembresMutationVariables = {data: NonReadonly<Membre>}
+    export type PostMembresMutationBody = NonReadonly<MembreCreation>
+    export type PostMembresMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | ConflitResponse | InvalideResponse | ErreurResponse>
+    export type PostMembresMutationVariables = {data: NonReadonly<MembreCreation>}
 
     /**
- * Permission : `membre.creer`. Exigences : RF-020.
+ * Permission : `membre.creer`. Exigences : RF-020. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 avec la fiche existante ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`. Doublon probable (RG-MBR-003) non confirmé → 422 `CONFIRMATION_REQUISE` (`erreurs[0].ref` = id de la fiche existante) ; renvoyer avec `confirmationDoublon: true`.
  * @summary Créer un membre
  */
-export const usePostMembres = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+export const usePostMembres = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembres>>, TError,PostMembresMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembres>>,
@@ -898,7 +902,7 @@ export const getPatchMembresIdUrl = (id: string,) => {
 }
 
 /**
- * Permission : `membre.modifier`.
+ * Permission : `membre.modifier`. Concurrence optimiste : `If-Match` (valeur de l'`ETag` ou du champ `etag`) obligatoire depuis la console.
  * @summary Modifier un membre
  */
 export const patchMembresId = async (id: string,
@@ -919,7 +923,7 @@ export const patchMembresId = async (id: string,
 
 export const getPatchMembresIdMutationKey = () => ['patchMembresId'] as const;
 
-export const getPatchMembresIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPatchMembresIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembresId>>, TError,PatchMembresIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof patchMembresId>>, TError,PatchMembresIdMutationVariables, TContext> => {
 
@@ -948,14 +952,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PatchMembresIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchMembresId>>>
     export type PatchMembresIdMutationBody = MembreMaj
-    export type PatchMembresIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PatchMembresIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>
     export type PatchMembresIdMutationVariables = {id: string;data: MembreMaj}
 
     /**
- * Permission : `membre.modifier`.
+ * Permission : `membre.modifier`. Concurrence optimiste : `If-Match` (valeur de l'`ETag` ou du champ `etag`) obligatoire depuis la console.
  * @summary Modifier un membre
  */
-export const usePatchMembresId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePatchMembresId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembresId>>, TError,PatchMembresIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchMembresId>>,

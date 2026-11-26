@@ -58,6 +58,15 @@ export interface Membre {
   /** total payé − total exigible ; négatif = reste dû */
   readonly soldeCotisations?: number;
   readonly doublonProbable?: boolean;
+  /**
+     * Fiche probablement identique (RG-MBR-003), renseignée tant que le doublon n'est pas écarté
+     * @nullable
+     */
+  readonly doublonDe?: string | null;
+  /** Fiche anonymisée (RG-MBR-009, irréversible) */
+  readonly anonymise?: boolean;
+  /** Version opaque (identique à l'en-tête ETag), à renvoyer dans If-Match */
+  readonly etag?: string;
   readonly createdAt?: string;
   readonly updatedAt?: string;
 }
