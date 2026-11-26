@@ -7,9 +7,10 @@ import { InfraModule } from './infra/infra.module.js';
 import { AssociationsModule } from './modules/associations/associations.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { HealthController } from './modules/health/health.controller.js';
+import { UtilisateursModule } from './modules/utilisateurs/utilisateurs.module.js';
 
 @Module({
-  imports: [InfraModule, AuthModule, AssociationsModule],
+  imports: [InfraModule, AuthModule, UtilisateursModule, AssociationsModule],
   controllers: [HealthController],
   providers: [
     { provide: APP_FILTER, useClass: ProblemeFilter },
