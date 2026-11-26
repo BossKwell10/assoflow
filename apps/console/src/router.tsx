@@ -109,12 +109,6 @@ const ecrans: { path: string; titre: string; sprint: string; permission: Permiss
   { path: '/depenses', titre: t('menu.depenses'), sprint: 'sprint 6', permission: 'depense.lire' },
   { path: '/projets', titre: t('menu.projets'), sprint: 'phase 2', permission: 'projet.lire' },
   { path: '/rapports', titre: t('menu.rapports'), sprint: 'sprint 7', permission: 'rapport.lire' },
-  {
-    path: '/parametres',
-    titre: t('menu.parametres'),
-    sprint: 'sprint 2',
-    permission: ['association.modifier', 'exercice.gerer', 'utilisateur.lire', 'delegation.gerer'],
-  },
 ];
 
 export const routeTree = racine.addChildren([
@@ -138,6 +132,22 @@ export const routeTree = racine.addChildren([
         component: protege(e.permission, () => <APlusTard titre={e.titre} sprint={e.sprint} />),
       }),
     ),
+    createRoute({
+      getParentRoute: () => espace,
+      path: '/parametres',
+      component: protege(
+        ['association.modifier', 'exercice.gerer', 'utilisateur.lire', 'delegation.gerer'],
+        lazyRouteComponent(() => import('./features/parametres/Parametres'), 'Parametres'),
+      ),
+    }),
+    createRoute({
+      getParentRoute: () => espace,
+      path: '/parametres/utilisateurs',
+      component: protege(
+        ['utilisateur.lire', 'utilisateur.gerer'],
+        lazyRouteComponent(() => import('./features/parametres/UtilisateursRoles'), 'UtilisateursRoles'),
+      ),
+    }),
   ]),
 ]);
 
