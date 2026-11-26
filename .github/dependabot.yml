@@ -13,3 +13,7 @@ updates:
   - package-ecosystem: docker
     directories: [/apps/api, /apps/console]
     schedule: { interval: monthly }
+    ignore:
+      # Node : uniquement les versions LTS (paires). Les montées de version majeure se décident à la main.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
