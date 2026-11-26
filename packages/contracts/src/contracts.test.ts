@@ -52,3 +52,25 @@ describe('rôles système', () => {
     expect(ROLES_SYSTEME.president.permissions).not.toContain('depense.payer');
   });
 });
+
+describe('identifiants et schémas membres', () => {
+  it('uuidv7 : version 7, variante RFC, triable par date', async () => {
+    const { uuidv7, UUID_V7 } = await import('./index.js');
+    const a = uuidv7(1_700_000_000_000);
+    const b = uuidv7(1_700_000_000_001);
+    expect(a).toMatch(UUID_V7);
+    expect(a < b).toBe(true);
+  });
+  it('création de membre : consentement obligatoire, chaînes vides → null', async () => {
+    const { membreCreationSchema, uuidv7 } = await import('./index.js');
+    const base = { id: uuidv7(), nom: 'Koffi', prenoms: 'Ama', villageOrigine: '' };
+    expect(membreCreationSchema.safeParse(base).success).toBe(false);
+    const ok = membreCreationSchema.parse({
+      ...base,
+      paysResidence: 'fr',
+      consentement: { traitementDonnees: true, canal: 'papier' },
+    });
+    expect(ok.villageOrigine).toBeNull();
+    expect(ok.paysResidence).toBe('FR');
+  });
+});
