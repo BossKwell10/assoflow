@@ -204,3 +204,14 @@ sauf mention « écart ».
 | **Écart** — mots de passe courants (§2.4) | Sprint 1 : liste réduite (~70 entrées, `MOTS_DE_PASSE_COURANTS`). La liste des 10 000 mots de passe les plus courants sera chargée depuis un fichier au sprint 8 (durcissement). « Suite de chiffres du téléphone » = au moins 6 chiffres consécutifs du numéro E.164. |
 | **Écart** — envoi des SMS | Fournisseur `journal` (logs, message masqué) ; envoi direct après commit, sans outbox. L'outbox et les vrais fournisseurs arrivent au sprint 4 (E6-01, E6-02). |
 | Clés | `JWT_PRIVATE_KEY(_FILE)` / `JWT_PUBLIC_KEY(_FILE)` (PEM Ed25519), `FIELD_ENCRYPTION_KEY(_FILE)`, `OTP_PEPPER(_FILE)` : obligatoires en production ; en développement et en test, valeurs éphémères générées au démarrage avec un avertissement. |
+
+## 12. Précisions d'implémentation (sprint 2)
+
+| Sujet | Implémentation |
+| --- | --- |
+| Concurrence (07 §5) | `ETag` + champ `etag` sur `Association` et `Membre` ; `If-Match` obligatoire depuis la console (claim `can = console`, sinon `428 PRECONDITION_REQUISE`), facultatif depuis le mobile ; `412 PRECONDITION_ECHOUEE` si la version a changé. Mécanisme réutilisable : `avecEtag()` / `verifierIfMatch()` / `EtagInterceptor` (`apps/api/src/common/concurrence.ts`). |
+| Fichiers multipart (§8, 07 §6) | Logo et photo : 2 Mo maximum, une seule partie `fichier`, type déterminé par *magic bytes* (PNG, JPEG, WebP), type MIME et extension déclarés ignorés ; refus `422 VALIDATION` (`TYPE_FICHIER_INVALIDE`, `FICHIER_TROP_GROS`). Clés `associations/<aid>/…` aléatoires ; ancien objet supprimé après le commit, nouvel objet supprimé si la transaction échoue. **Écart** : pas de recompression WebP 1600 px au sprint 2 (dépendance d'imagerie à ajouter au sprint 5 avec les pièces jointes). |
+| Stockage objet | `StockageObjets` : S3 compatible (`S3_*`, chiffrement côté serveur, URL présignée 5 min) ; hors production sans S3 : disque local, fichiers servis par `GET /v1/fichiers?c=…&exp=…&sig=…` (HMAC, 5 min, clé éphémère). Production sans `S3_BUCKET`/`S3_ACCESS_KEY`/`S3_SECRET_KEY` : démarrage refusé. |
+| Consentement (§8) | `POST /membres` exige `consentement` (`traitementDonnees: true`, canal `console` ou `papier`) : une ligne `consentements` (`traitement_donnees`, version `VERSION_CGU`, `recueilli_par` = auteur). |
+| Accès app d'un membre | `POST /membres/{id}/acces-app` réutilise l'invitation (§2.1) avec le rôle système `membre` et lie la fiche (`acces_association.membre_id`, `membres.user_id`). |
+| Audit des membres (§7) | `membre.cree` (valeurs saisies), `membre.modifie` (champs modifiés seulement, avant/après), `membre.suspendu`, `membre.desactive`, `membre.reactive`, `membre.anonymise` (numéro et motif, aucune donnée personnelle), `membre.photo_modifiee`, `membre.doublon_ecarte`, `membre.passe_dormant` ; familles, ayants droit, catégories, exercices et paramètres de l'association de même. Téléphones toujours masqués. |
