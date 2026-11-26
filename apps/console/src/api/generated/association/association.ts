@@ -575,7 +575,7 @@ export const usePostExercices = <TError = ErrorType<NonAuthentifieResponse | Int
 }
 
 /**
- * Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s'il reste des dépenses soumises ou validées datées dans l'exercice ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.
+ * Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s'il reste des dépenses soumises ou validées rattachées à l'exercice ou datées dans sa période ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.
  * @summary Clôturer un exercice
  */
 export const postExercicesIdCloturer = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Exercice> => {
@@ -628,7 +628,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostExercicesIdCloturerMutationVariables = {id: string}
 
     /**
- * Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s'il reste des dépenses soumises ou validées datées dans l'exercice ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.
+ * Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s'il reste des dépenses soumises ou validées rattachées à l'exercice ou datées dans sa période ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.
  * @summary Clôturer un exercice
  */
 export const usePostExercicesIdCloturer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,

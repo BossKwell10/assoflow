@@ -734,7 +734,7 @@ export const postMembresIdDoublon = async (id: string,
 
 export const getPostMembresIdDoublonMutationKey = () => ['postMembresIdDoublon'] as const;
 
-export const getPostMembresIdDoublonMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostMembresIdDoublonMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdDoublon>>, TError,PostMembresIdDoublonMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembresIdDoublon>>, TError,PostMembresIdDoublonMutationVariables, TContext> => {
 
@@ -763,14 +763,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostMembresIdDoublonMutationResult = NonNullable<Awaited<ReturnType<typeof postMembresIdDoublon>>>
     export type PostMembresIdDoublonMutationBody = PostMembresIdDoublonBody
-    export type PostMembresIdDoublonMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostMembresIdDoublonMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostMembresIdDoublonMutationVariables = {id: string;data: PostMembresIdDoublonBody}
 
     /**
  * Permission : `membre.modifier`. RG-MBR-003.
  * @summary Statuer sur un doublon probable
  */
-export const usePostMembresIdDoublon = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostMembresIdDoublon = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdDoublon>>, TError,PostMembresIdDoublonMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembresIdDoublon>>,
@@ -923,7 +923,7 @@ export const patchMembresId = async (id: string,
 
 export const getPatchMembresIdMutationKey = () => ['patchMembresId'] as const;
 
-export const getPatchMembresIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
+export const getPatchMembresIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembresId>>, TError,PatchMembresIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof patchMembresId>>, TError,PatchMembresIdMutationVariables, TContext> => {
 
@@ -952,14 +952,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PatchMembresIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchMembresId>>>
     export type PatchMembresIdMutationBody = MembreMaj
-    export type PatchMembresIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>
+    export type PatchMembresIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>
     export type PatchMembresIdMutationVariables = {id: string;data: MembreMaj}
 
     /**
  * Permission : `membre.modifier`. Concurrence optimiste : `If-Match` (valeur de l'`ETag` ou du champ `etag`) obligatoire depuis la console.
  * @summary Modifier un membre
  */
-export const usePatchMembresId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
+export const usePatchMembresId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembresId>>, TError,PatchMembresIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchMembresId>>,
@@ -978,7 +978,7 @@ export const usePatchMembresId = <TError = ErrorType<NonAuthentifieResponse | In
 }
 
 /**
- * Permission : `membre.suspendre`. Exigences : RF-027.
+ * Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `actif` uniquement, sinon 409 `ETAT_INCOMPATIBLE`.
  * @summary Suspendre
  */
 export const postMembresIdSuspendre = async (id: string,
@@ -999,7 +999,7 @@ export const postMembresIdSuspendre = async (id: string,
 
 export const getPostMembresIdSuspendreMutationKey = () => ['postMembresIdSuspendre'] as const;
 
-export const getPostMembresIdSuspendreMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostMembresIdSuspendreMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdSuspendre>>, TError,PostMembresIdSuspendreMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembresIdSuspendre>>, TError,PostMembresIdSuspendreMutationVariables, TContext> => {
 
@@ -1028,14 +1028,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostMembresIdSuspendreMutationResult = NonNullable<Awaited<ReturnType<typeof postMembresIdSuspendre>>>
     export type PostMembresIdSuspendreMutationBody = Motif
-    export type PostMembresIdSuspendreMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostMembresIdSuspendreMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostMembresIdSuspendreMutationVariables = {id: string;data: Motif}
 
     /**
- * Permission : `membre.suspendre`. Exigences : RF-027.
+ * Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `actif` uniquement, sinon 409 `ETAT_INCOMPATIBLE`.
  * @summary Suspendre
  */
-export const usePostMembresIdSuspendre = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostMembresIdSuspendre = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdSuspendre>>, TError,PostMembresIdSuspendreMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembresIdSuspendre>>,
@@ -1054,7 +1054,7 @@ export const usePostMembresIdSuspendre = <TError = ErrorType<NonAuthentifieRespo
 }
 
 /**
- * Permission : `membre.suspendre`. Exigences : RF-027.
+ * Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `suspendu` ou `desactive`, sinon 409 `ETAT_INCOMPATIBLE`.
  * @summary Réactiver
  */
 export const postMembresIdReactiver = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Membre> => {
@@ -1074,7 +1074,7 @@ export const postMembresIdReactiver = async (id: string, options?: Parameters<ty
 
 export const getPostMembresIdReactiverMutationKey = () => ['postMembresIdReactiver'] as const;
 
-export const getPostMembresIdReactiverMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostMembresIdReactiverMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdReactiver>>, TError,PostMembresIdReactiverMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembresIdReactiver>>, TError,PostMembresIdReactiverMutationVariables, TContext> => {
 
@@ -1103,14 +1103,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostMembresIdReactiverMutationResult = NonNullable<Awaited<ReturnType<typeof postMembresIdReactiver>>>
 
-    export type PostMembresIdReactiverMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostMembresIdReactiverMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostMembresIdReactiverMutationVariables = {id: string}
 
     /**
- * Permission : `membre.suspendre`. Exigences : RF-027.
+ * Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `suspendu` ou `desactive`, sinon 409 `ETAT_INCOMPATIBLE`.
  * @summary Réactiver
  */
-export const usePostMembresIdReactiver = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostMembresIdReactiver = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdReactiver>>, TError,PostMembresIdReactiverMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembresIdReactiver>>,
@@ -1129,7 +1129,7 @@ export const usePostMembresIdReactiver = <TError = ErrorType<NonAuthentifieRespo
 }
 
 /**
- * Permission : `membre.suspendre`. Exigences : RF-027.
+ * Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `actif` ou `suspendu`, sinon 409 `ETAT_INCOMPATIBLE`.
  * @summary Désactiver
  */
 export const postMembresIdDesactiver = async (id: string,
@@ -1150,7 +1150,7 @@ export const postMembresIdDesactiver = async (id: string,
 
 export const getPostMembresIdDesactiverMutationKey = () => ['postMembresIdDesactiver'] as const;
 
-export const getPostMembresIdDesactiverMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostMembresIdDesactiverMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdDesactiver>>, TError,PostMembresIdDesactiverMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembresIdDesactiver>>, TError,PostMembresIdDesactiverMutationVariables, TContext> => {
 
@@ -1179,14 +1179,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostMembresIdDesactiverMutationResult = NonNullable<Awaited<ReturnType<typeof postMembresIdDesactiver>>>
     export type PostMembresIdDesactiverMutationBody = Motif
-    export type PostMembresIdDesactiverMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostMembresIdDesactiverMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostMembresIdDesactiverMutationVariables = {id: string;data: Motif}
 
     /**
- * Permission : `membre.suspendre`. Exigences : RF-027.
+ * Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `actif` ou `suspendu`, sinon 409 `ETAT_INCOMPATIBLE`.
  * @summary Désactiver
  */
-export const usePostMembresIdDesactiver = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostMembresIdDesactiver = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdDesactiver>>, TError,PostMembresIdDesactiverMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembresIdDesactiver>>,
@@ -1205,7 +1205,7 @@ export const usePostMembresIdDesactiver = <TError = ErrorType<NonAuthentifieResp
 }
 
 /**
- * Permission : `membre.anonymiser`. Exigences : RF-SUP-055.
+ * Permission : `membre.anonymiser`. Exigences : RF-SUP-055. RG-MBR-009 : irréversible ; 409 `ETAT_INCOMPATIBLE` si déjà anonymisée ou si le membre a un accès app actif (le révoquer d'abord).
  * @summary Anonymiser (irréversible)
  */
 export const postMembresIdAnonymiser = async (id: string,
@@ -1226,7 +1226,7 @@ export const postMembresIdAnonymiser = async (id: string,
 
 export const getPostMembresIdAnonymiserMutationKey = () => ['postMembresIdAnonymiser'] as const;
 
-export const getPostMembresIdAnonymiserMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostMembresIdAnonymiserMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdAnonymiser>>, TError,PostMembresIdAnonymiserMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembresIdAnonymiser>>, TError,PostMembresIdAnonymiserMutationVariables, TContext> => {
 
@@ -1255,14 +1255,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostMembresIdAnonymiserMutationResult = NonNullable<Awaited<ReturnType<typeof postMembresIdAnonymiser>>>
     export type PostMembresIdAnonymiserMutationBody = Motif
-    export type PostMembresIdAnonymiserMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostMembresIdAnonymiserMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostMembresIdAnonymiserMutationVariables = {id: string;data: Motif}
 
     /**
- * Permission : `membre.anonymiser`. Exigences : RF-SUP-055.
+ * Permission : `membre.anonymiser`. Exigences : RF-SUP-055. RG-MBR-009 : irréversible ; 409 `ETAT_INCOMPATIBLE` si déjà anonymisée ou si le membre a un accès app actif (le révoquer d'abord).
  * @summary Anonymiser (irréversible)
  */
-export const usePostMembresIdAnonymiser = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostMembresIdAnonymiser = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdAnonymiser>>, TError,PostMembresIdAnonymiserMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembresIdAnonymiser>>,
@@ -1281,7 +1281,7 @@ export const usePostMembresIdAnonymiser = <TError = ErrorType<NonAuthentifieResp
 }
 
 /**
- * Permission : `utilisateur.gerer`.
+ * Permission : `utilisateur.gerer`. Invitation (docs/04 §2.1) avec le rôle système `membre`, liée à la fiche ; téléphone requis (422) ; membre désactivé ou anonymisé → 409.
  * @summary Ouvrir l'accès à l'app au membre (invitation)
  */
 export const postMembresIdAccesApp = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Acces> => {
@@ -1301,7 +1301,7 @@ export const postMembresIdAccesApp = async (id: string, options?: Parameters<typ
 
 export const getPostMembresIdAccesAppMutationKey = () => ['postMembresIdAccesApp'] as const;
 
-export const getPostMembresIdAccesAppMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostMembresIdAccesAppMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdAccesApp>>, TError,PostMembresIdAccesAppMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembresIdAccesApp>>, TError,PostMembresIdAccesAppMutationVariables, TContext> => {
 
@@ -1330,14 +1330,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostMembresIdAccesAppMutationResult = NonNullable<Awaited<ReturnType<typeof postMembresIdAccesApp>>>
 
-    export type PostMembresIdAccesAppMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostMembresIdAccesAppMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostMembresIdAccesAppMutationVariables = {id: string}
 
     /**
- * Permission : `utilisateur.gerer`.
+ * Permission : `utilisateur.gerer`. Invitation (docs/04 §2.1) avec le rôle système `membre`, liée à la fiche ; téléphone requis (422) ; membre désactivé ou anonymisé → 409.
  * @summary Ouvrir l'accès à l'app au membre (invitation)
  */
-export const usePostMembresIdAccesApp = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostMembresIdAccesApp = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdAccesApp>>, TError,PostMembresIdAccesAppMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembresIdAccesApp>>,
@@ -1379,7 +1379,7 @@ formData.append(`fichier`, putMembresIdPhotoBody.fichier);
 
 export const getPutMembresIdPhotoMutationKey = () => ['putMembresIdPhoto'] as const;
 
-export const getPutMembresIdPhotoMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPutMembresIdPhotoMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putMembresIdPhoto>>, TError,PutMembresIdPhotoMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof putMembresIdPhoto>>, TError,PutMembresIdPhotoMutationVariables, TContext> => {
 
@@ -1408,14 +1408,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PutMembresIdPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof putMembresIdPhoto>>>
     export type PutMembresIdPhotoMutationBody = PutMembresIdPhotoBody
-    export type PutMembresIdPhotoMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PutMembresIdPhotoMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PutMembresIdPhotoMutationVariables = {id: string;data: PutMembresIdPhotoBody}
 
     /**
  * Permission : `membre.modifier`. Exigences : RF-020.
  * @summary Remplacer la photo (multipart)
  */
-export const usePutMembresIdPhoto = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePutMembresIdPhoto = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putMembresIdPhoto>>, TError,PutMembresIdPhotoMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof putMembresIdPhoto>>,
@@ -1901,7 +1901,7 @@ export const getPostMembresIdAyantsDroitUrl = (id: string,) => {
 }
 
 /**
- * Permission : `membre.modifier`. Exigences : RF-028.
+ * Permission : `membre.modifier`. Exigences : RF-028. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`.
  * @summary Ajouter un ayant droit
  */
 export const postMembresIdAyantsDroit = async (id: string,
@@ -1922,7 +1922,7 @@ export const postMembresIdAyantsDroit = async (id: string,
 
 export const getPostMembresIdAyantsDroitMutationKey = () => ['postMembresIdAyantsDroit'] as const;
 
-export const getPostMembresIdAyantsDroitMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostMembresIdAyantsDroitMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdAyantsDroit>>, TError,PostMembresIdAyantsDroitMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembresIdAyantsDroit>>, TError,PostMembresIdAyantsDroitMutationVariables, TContext> => {
 
@@ -1951,14 +1951,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostMembresIdAyantsDroitMutationResult = NonNullable<Awaited<ReturnType<typeof postMembresIdAyantsDroit>>>
     export type PostMembresIdAyantsDroitMutationBody = AyantDroit
-    export type PostMembresIdAyantsDroitMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostMembresIdAyantsDroitMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostMembresIdAyantsDroitMutationVariables = {id: string;data: AyantDroit}
 
     /**
- * Permission : `membre.modifier`. Exigences : RF-028.
+ * Permission : `membre.modifier`. Exigences : RF-028. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`.
  * @summary Ajouter un ayant droit
  */
-export const usePostMembresIdAyantsDroit = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostMembresIdAyantsDroit = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresIdAyantsDroit>>, TError,PostMembresIdAyantsDroitMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembresIdAyantsDroit>>,
@@ -2000,7 +2000,7 @@ export const patchMembresIdAyantsDroitAyantDroitId = async (id: string,
 
 export const getPatchMembresIdAyantsDroitAyantDroitIdMutationKey = () => ['patchMembresIdAyantsDroitAyantDroitId'] as const;
 
-export const getPatchMembresIdAyantsDroitAyantDroitIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPatchMembresIdAyantsDroitAyantDroitIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembresIdAyantsDroitAyantDroitId>>, TError,PatchMembresIdAyantsDroitAyantDroitIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof patchMembresIdAyantsDroitAyantDroitId>>, TError,PatchMembresIdAyantsDroitAyantDroitIdMutationVariables, TContext> => {
 
@@ -2029,14 +2029,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PatchMembresIdAyantsDroitAyantDroitIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchMembresIdAyantsDroitAyantDroitId>>>
     export type PatchMembresIdAyantsDroitAyantDroitIdMutationBody = AyantDroit
-    export type PatchMembresIdAyantsDroitAyantDroitIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PatchMembresIdAyantsDroitAyantDroitIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PatchMembresIdAyantsDroitAyantDroitIdMutationVariables = {id: string;ayantDroitId: string;data: AyantDroit}
 
     /**
  * Permission : `membre.modifier`.
  * @summary Modifier un ayant droit
  */
-export const usePatchMembresIdAyantsDroitAyantDroitId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePatchMembresIdAyantsDroitAyantDroitId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembresIdAyantsDroitAyantDroitId>>, TError,PatchMembresIdAyantsDroitAyantDroitIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchMembresIdAyantsDroitAyantDroitId>>,
@@ -2077,7 +2077,7 @@ export const deleteMembresIdAyantsDroitAyantDroitId = async (id: string,
 
 export const getDeleteMembresIdAyantsDroitAyantDroitIdMutationKey = () => ['deleteMembresIdAyantsDroitAyantDroitId'] as const;
 
-export const getDeleteMembresIdAyantsDroitAyantDroitIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>,
+export const getDeleteMembresIdAyantsDroitAyantDroitIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMembresIdAyantsDroitAyantDroitId>>, TError,DeleteMembresIdAyantsDroitAyantDroitIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteMembresIdAyantsDroitAyantDroitId>>, TError,DeleteMembresIdAyantsDroitAyantDroitIdMutationVariables, TContext> => {
 
@@ -2106,14 +2106,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteMembresIdAyantsDroitAyantDroitIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMembresIdAyantsDroitAyantDroitId>>>
 
-    export type DeleteMembresIdAyantsDroitAyantDroitIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>
+    export type DeleteMembresIdAyantsDroitAyantDroitIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>
     export type DeleteMembresIdAyantsDroitAyantDroitIdMutationVariables = {id: string;ayantDroitId: string}
 
     /**
  * Permission : `membre.modifier`.
  * @summary Retirer un ayant droit
  */
-export const useDeleteMembresIdAyantsDroitAyantDroitId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>,
+export const useDeleteMembresIdAyantsDroitAyantDroitId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMembresIdAyantsDroitAyantDroitId>>, TError,DeleteMembresIdAyantsDroitAyantDroitIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteMembresIdAyantsDroitAyantDroitId>>,
@@ -2252,7 +2252,7 @@ export const getPostFamillesUrl = () => {
 }
 
 /**
- * Permission : `membre.creer`. Exigences : RF-021.
+ * Permission : `membre.creer`. Exigences : RF-021. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`.
  * @summary Créer une famille
  */
 export const postFamilles = async (famille: NonReadonly<Famille>, options?: Parameters<typeof clientApi>[1]): Promise<Famille> => {
@@ -2272,7 +2272,7 @@ export const postFamilles = async (famille: NonReadonly<Famille>, options?: Para
 
 export const getPostFamillesMutationKey = () => ['postFamilles'] as const;
 
-export const getPostFamillesMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+export const getPostFamillesMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postFamilles>>, TError,PostFamillesMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postFamilles>>, TError,PostFamillesMutationVariables, TContext> => {
 
@@ -2301,14 +2301,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostFamillesMutationResult = NonNullable<Awaited<ReturnType<typeof postFamilles>>>
     export type PostFamillesMutationBody = NonReadonly<Famille>
-    export type PostFamillesMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>
+    export type PostFamillesMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostFamillesMutationVariables = {data: NonReadonly<Famille>}
 
     /**
- * Permission : `membre.creer`. Exigences : RF-021.
+ * Permission : `membre.creer`. Exigences : RF-021. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`.
  * @summary Créer une famille
  */
-export const usePostFamilles = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+export const usePostFamilles = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postFamilles>>, TError,PostFamillesMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postFamilles>>,

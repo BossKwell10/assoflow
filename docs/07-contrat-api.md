@@ -83,8 +83,9 @@ La console affiche `detail` à l'utilisateur ; elle mappe `erreurs[].champ` sur 
   (dérivé de `sync_version`), `If-Match` **obligatoire** sur `PATCH` depuis la console → `412` si la ressource a changé.
   Valeur opaque, aussi exposée dans le champ `etag` du corps (le client généré ne lit pas les en-têtes) ; `If-Match: *`
   accepté. `If-Match` absent depuis la console (claim `can = console`) → `428 PRECONDITION_REQUISE` ; depuis le mobile,
-  facultatif (la synchronisation gère ses propres conflits, 05). Sprint 2 : `PATCH /association` (ETag dérivé de
-  `updated_at`, la table n'ayant pas de `sync_version`) et `PATCH /membres/{id}`.
+  facultatif (la synchronisation gère ses propres conflits, 05). Sprint 2 : `PATCH /association` (ETag = empreinte du
+  contenu : `associations.updated_at` change à chaque écriture du tenant via `sync_counter`) et `PATCH /membres/{id}`
+  (ETag = `sync_version`).
 - Créations à `id` client (`membres`, `familles`, `ayants droit`) : l'empreinte du corps de création est conservée
   (`empreinte_creation`) ; rejeu avec le même id et le même corps → `200` et l'état **actuel** de la ressource, même si
   elle a été modifiée depuis ; corps différent → `409 CONFLIT_IDEMPOTENCE`. Un id déjà pris par un autre tenant donne

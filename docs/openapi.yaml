@@ -597,7 +597,7 @@ paths:
       - Association
       summary: Clôturer un exercice
       operationId: post_exercices_id_cloturer
-      description: 'Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s''il reste des dépenses soumises ou validées datées dans l''exercice ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.'
+      description: 'Permission : `exercice.cloturer`. RG-EXE-003 : refusée (422 `DEPENSES_EN_COURS`) s''il reste des dépenses soumises ou validées rattachées à l''exercice ou datées dans sa période ; exercice déjà clôturé → 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -1314,6 +1314,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}:
@@ -1390,6 +1392,8 @@ paths:
           $ref: '#/components/responses/PreconditionEchouee'
         '428':
           $ref: '#/components/responses/PreconditionRequise'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/suspendre:
@@ -1398,7 +1402,7 @@ paths:
       - Membres
       summary: Suspendre
       operationId: post_membres_id_suspendre
-      description: 'Permission : `membre.suspendre`. Exigences : RF-027.'
+      description: 'Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `actif` uniquement, sinon 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -1427,6 +1431,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/reactiver:
@@ -1435,7 +1441,7 @@ paths:
       - Membres
       summary: Réactiver
       operationId: post_membres_id_reactiver
-      description: 'Permission : `membre.suspendre`. Exigences : RF-027.'
+      description: 'Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `suspendu` ou `desactive`, sinon 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -1458,6 +1464,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/desactiver:
@@ -1466,7 +1474,7 @@ paths:
       - Membres
       summary: Désactiver
       operationId: post_membres_id_desactiver
-      description: 'Permission : `membre.suspendre`. Exigences : RF-027.'
+      description: 'Permission : `membre.suspendre`. Exigences : RF-027. RG-MBR-004 : depuis `actif` ou `suspendu`, sinon 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -1495,6 +1503,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/anonymiser:
@@ -1503,7 +1513,7 @@ paths:
       - Membres
       summary: Anonymiser (irréversible)
       operationId: post_membres_id_anonymiser
-      description: 'Permission : `membre.anonymiser`. Exigences : RF-SUP-055.'
+      description: 'Permission : `membre.anonymiser`. Exigences : RF-SUP-055. RG-MBR-009 : irréversible ; 409 `ETAT_INCOMPATIBLE` si déjà anonymisée ou si le membre a un accès app actif (le révoquer d''abord).'
       parameters:
       - name: id
         in: path
@@ -1532,6 +1542,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/acces-app:
@@ -1540,7 +1552,7 @@ paths:
       - Membres
       summary: Ouvrir l'accès à l'app au membre (invitation)
       operationId: post_membres_id_acces_app
-      description: 'Permission : `utilisateur.gerer`.'
+      description: 'Permission : `utilisateur.gerer`. Invitation (docs/04 §2.1) avec le rôle système `membre`, liée à la fiche ; téléphone requis (422) ; membre désactivé ou anonymisé → 409.'
       parameters:
       - name: id
         in: path
@@ -1563,6 +1575,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/photo:
@@ -1606,6 +1620,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/situation:
@@ -1734,7 +1750,7 @@ paths:
       - Membres
       summary: Ajouter un ayant droit
       operationId: post_membres_id_ayants_droit
-      description: 'Permission : `membre.modifier`. Exigences : RF-028.'
+      description: 'Permission : `membre.modifier`. Exigences : RF-028. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`.'
       parameters:
       - name: id
         in: path
@@ -1755,6 +1771,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AyantDroit'
+        '200':
+          description: Rejeu idempotent (même id, même contenu) — ayant droit existant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AyantDroit'
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
@@ -1763,6 +1785,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/ayants-droit/{ayantDroitId}:
@@ -1806,6 +1830,8 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
     delete:
@@ -1836,6 +1862,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /familles:
@@ -1871,7 +1899,7 @@ paths:
       - Membres
       summary: Créer une famille
       operationId: post_familles
-      description: 'Permission : `membre.creer`. Exigences : RF-021.'
+      description: 'Permission : `membre.creer`. Exigences : RF-021. Idempotence par `id` (docs/07 §5) : même id et même contenu → 200 ; contenu différent → 409 `CONFLIT_IDEMPOTENCE`.'
       requestBody:
         required: true
         content:
@@ -1885,12 +1913,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Famille'
+        '200':
+          description: Rejeu idempotent (même id, même contenu) — famille existante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Famille'
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
           $ref: '#/components/responses/Interdit'
         '422':
           $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /familles/{id}:
