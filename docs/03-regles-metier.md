@@ -36,6 +36,21 @@ charges ; elles sont à confirmer avec les associations pilotes.
 | RG-MBR-008 | Carte de membre (RF-023, Should) : QR code contenant uniquement `assoflow:m:<association_id>:<membre_id>` signé (HMAC), aucune donnée personnelle. |
 | RG-MBR-009 | Anonymisation sur demande (RF-SUP-055) : nom, prénoms, téléphone, email, photo, date de naissance remplacés ou effacés ; numéro, paiements et imputations conservés (obligation de traçabilité financière). Irréversible, permission `membre.anonymiser`, motif obligatoire. |
 
+### Précisions d'implémentation (sprint 2)
+
+| Règle | Implémentation |
+| --- | --- |
+| RG-ASS-003 | « Président » = accès actif portant le rôle système `president`. Un autre rôle titulaire de `association.modifier` qui change `seuilDoubleValidation` reçoit `403 PERMISSION_REFUSEE` ; tout changement est tracé (`association.modifiee`, valeurs avant/après). |
+| RG-EXE-001 | Chevauchement → `422 VALIDATION` (`erreurs[0].code = CHEVAUCHEMENT`), y compris entre créations simultanées (contrainte d'exclusion). Création manuelle : dates explicites (le défaut de 12 mois s'applique à la création automatique, RG-ASS-001 et RG-EXE-004). |
+| RG-EXE-003 | Dépenses « en cours » = `soumise` ou `validee` rattachées à l'exercice **ou** datées dans sa période → `422 DEPENSES_EN_COURS` avec leur nombre. Exercice déjà clôturé → `409 ETAT_INCOMPATIBLE`. |
+| RG-MBR-001 | Numéro attribué dans la transaction de création (`app_prochain_numero('membre', 0)`) : une création refusée ou annulée ne consomme pas de numéro. |
+| RG-MBR-002 | Vérifiée à la création et à chaque modification de téléphone ou de famille (`422`, code `CONTACT_REQUIS`). Un chef de famille ne peut pas retirer son téléphone si des membres sans téléphone de sa famille dépendent de lui (`CONTACT_FAMILLE`) ; un nouveau chef doit alors avoir un téléphone. |
+| RG-MBR-003 | Comparaison sans casse ni accents, dans le tenant, fiches anonymisées exclues, téléphone obligatoire pour les deux critères. Console : `POST /membres` répond `422 CONFIRMATION_REQUISE` (`erreurs[0].ref` = fiche existante) ; renvoyé avec `confirmationDoublon: true`, la fiche est créée et marquée `a_verifier` (écran A7). Une modification d'identité qui crée un doublon marque la fiche sans bloquer. « Ce n'est pas un doublon » → `pas_doublon` (n'est plus signalée). |
+| RG-MBR-004 | Transitions : `suspendre` depuis `actif` ; `desactiver` depuis `actif` ou `suspendu` ; `reactiver` depuis `suspendu` ou `desactive` (motif effacé). Autres cas → `409 ETAT_INCOMPATIBLE`. Liste : `etat ≠ desactive` par défaut, `?etat=desactive` pour les voir. |
+| RG-MBR-005 | Date de référence = dernier paiement effectif (direct ou imputé) **ou, à défaut, la date d'adhésion** : un nouveau membre n'est pas dormant avant `jours_retard_dormant` jours d'ancienneté. Membres désactivés et anonymisés ignorés. Sprint 2 : `DormanceService.passerEnDormance()` et `reactiverApresPaiement()` (audit `acteur_type = systeme`) ; le job nocturne et l'appel depuis les paiements restent à brancher. |
+| RG-MBR-006 | Une famille créée avec un chef y rattache ce chef (refus `AUTRE_FAMILLE` s'il appartient à une autre famille) ; le chef désigné ensuite doit déjà appartenir à la famille (`CHEF_HORS_FAMILLE`) ; le chef ne quitte pas sa famille sans successeur (`CHEF_DE_FAMILLE`). |
+| RG-MBR-009 | Effacés : nom (« Anonyme »), prénoms, sexe, date de naissance, téléphone, email, village, résidence, photo (objet supprimé), notes, famille, lien de compte ; ayants droit effacés et supprimés ; chef de famille retiré des familles concernées ; fiche `desactive`, `anonymise_at` posé. Conservés : numéro, pays, catégorie, statut d'adhésion, paiements, imputations, consentements. Refusée (`409`) si le membre a un accès app actif (le révoquer d'abord). **Écart à valider juridiquement** : le journal d'audit, immuable et chaîné, conserve les valeurs des événements antérieurs (création, modifications) ; l'historique exposé n'en reprend aucune. |
+
 ## 4. Cotisations et échéancier
 
 | ID | Règle |

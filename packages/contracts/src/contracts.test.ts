@@ -3,6 +3,8 @@ import {
   PERMISSIONS,
   PERMISSIONS_RESERVEES_PRESIDENT,
   ROLES_SYSTEME,
+  STATUTS,
+  definirStatut,
   formatMontant,
   masquerTelephone,
   normaliserTelephone,
@@ -50,5 +52,39 @@ describe('rôles système', () => {
   });
   it('le président ne paie pas les dépenses (séparation des tâches)', () => {
     expect(ROLES_SYSTEME.president.permissions).not.toContain('depense.payer');
+  });
+});
+
+describe('identifiants et schémas membres', () => {
+  it('uuidv7 : version 7, variante RFC, triable par date', async () => {
+    const { uuidv7, UUID_V7 } = await import('./index.js');
+    const a = uuidv7(1_700_000_000_000);
+    const b = uuidv7(1_700_000_000_001);
+    expect(a).toMatch(UUID_V7);
+    expect(a < b).toBe(true);
+  });
+  it('création de membre : consentement obligatoire, chaînes vides → null', async () => {
+    const { membreCreationSchema, uuidv7 } = await import('./index.js');
+    const base = { id: uuidv7(), nom: 'Koffi', prenoms: 'Ama', villageOrigine: '' };
+    expect(membreCreationSchema.safeParse(base).success).toBe(false);
+    const ok = membreCreationSchema.parse({
+      ...base,
+      paysResidence: 'fr',
+      consentement: { traitementDonnees: true, canal: 'papier' },
+    });
+    expect(ok.villageOrigine).toBeNull();
+    expect(ok.paysResidence).toBe('FR');
+  });
+});
+
+describe('dictionnaire des statuts (docs/08 §2)', () => {
+  it('associe un libellé et un ton à chaque statut', () => {
+    expect(definirStatut('membreEtat', 'suspendu')).toEqual({ libelle: 'Suspendu', ton: 'alerte' });
+    expect(definirStatut('exercice', 'cloture')).toEqual({ libelle: 'Clôturé', ton: 'neutre' });
+    for (const domaine of Object.values(STATUTS))
+      for (const d of Object.values(domaine)) expect(d.libelle).not.toBe('');
+  });
+  it('affiche une valeur inconnue en gris', () => {
+    expect(definirStatut('membreEtat', 'inconnu')).toEqual({ libelle: 'inconnu', ton: 'neutre' });
   });
 });

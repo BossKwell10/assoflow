@@ -1,6 +1,7 @@
+import { definirStatut, type DomaineStatut, type TonStatut } from '@assoflow/contracts';
 import { Badge } from '@mantine/core';
 
-export type Ton = 'succes' | 'attente' | 'alerte' | 'neutre';
+export type Ton = TonStatut;
 
 const COULEURS: Record<Ton, { bg: string; fg: string }> = {
   succes: { bg: '#E6F4EA', fg: '#1B6B34' },
@@ -21,4 +22,17 @@ export function Statut({ ton, children }: { ton: Ton; children: string }) {
       {children}
     </Badge>
   );
+}
+
+/** Statut piloté par le dictionnaire partagé (`STATUTS` de `@assoflow/contracts`, docs/08 §7). */
+export function BadgeStatut({
+  domaine,
+  valeur,
+}: {
+  domaine: DomaineStatut;
+  valeur: string | null | undefined;
+}) {
+  if (!valeur) return null;
+  const { libelle, ton } = definirStatut(domaine, valeur);
+  return <Statut ton={ton}>{libelle}</Statut>;
 }

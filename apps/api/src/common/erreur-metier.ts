@@ -7,7 +7,9 @@ export class ErreurMetier extends Error {
   constructor(
     readonly code: CodeErreur,
     readonly detail: string,
-    readonly erreurs: { champ: string; code: string; message: string }[] = [],
+    readonly erreurs: { champ: string; code: string; message: string; ref?: string | null }[] = [],
+    /** En-têtes HTTP à ajouter à la réponse (ex. `Retry-After`). */
+    readonly entetes: Record<string, string> = {},
   ) {
     super(detail);
     this.name = 'ErreurMetier';

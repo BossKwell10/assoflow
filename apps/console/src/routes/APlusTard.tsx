@@ -1,4 +1,5 @@
 import { Card, Stack, Text, Title } from '@mantine/core';
+import { t } from '../i18n';
 
 /** Écran prévu dans docs/08-console-specification.md, livré dans un sprint ultérieur. */
 export function APlusTard({ titre, sprint }: { titre: string; sprint: string }) {
@@ -8,7 +9,7 @@ export function APlusTard({ titre, sprint }: { titre: string; sprint: string }) 
         {titre}
       </Title>
       <Card withBorder radius="lg" padding="lg">
-        <Text c="dimmed">Écran prévu au {sprint} (voir docs/10-backlog-mvp.md).</Text>
+        <Text c="dimmed">{t('aPlusTard.message', { sprint })}</Text>
       </Card>
     </Stack>
   );

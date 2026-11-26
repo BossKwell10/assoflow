@@ -1,10 +1,30 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
-    "build": { "dependsOn": ["^build"], "outputs": ["dist/**"] },
-    "typecheck": { "dependsOn": ["^build"] },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
     "lint": {},
-    "test": { "dependsOn": ["^build"], "env": ["DATABASE_URL", "DATABASE_APP_URL"] },
-    "dev": { "cache": false, "persistent": true }
+    "test": {
+      "dependsOn": ["^build"],
+      "env": [
+        "DATABASE_URL",
+        "DATABASE_APP_URL",
+        "REDIS_URL",
+        "JWT_PRIVATE_KEY",
+        "JWT_PUBLIC_KEY",
+        "FIELD_ENCRYPTION_KEY",
+        "OTP_PEPPER",
+        "SMS_PROVIDERS"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
   }
 }
