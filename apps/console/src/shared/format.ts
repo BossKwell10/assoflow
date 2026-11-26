@@ -29,3 +29,10 @@ export function formatDateHeure(iso: string | null | undefined): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : `${DATE.format(d)} ${HEURE.format(d)}`;
 }
+
+/** `+2250701020304` → `+225 07 01 02 03 04` ; autres indicatifs : inchangé. */
+export function formatTelephone(e164: string | null | undefined): string {
+  if (!e164) return '';
+  const ci = /^\+225(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(e164);
+  return ci ? `+225 ${ci.slice(1).join(' ')}` : e164;
+}

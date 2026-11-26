@@ -66,6 +66,24 @@ export function rafraichirSession(): Promise<boolean> {
   return refreshEnCours;
 }
 
+/**
+ * Dernier `ETag` reçu par ressource (chemin sans paramètres) : renvoyé en `If-Match` sur les `PATCH`
+ * de la console (docs/07 §5, contrôle de concurrence optimiste).
+ */
+const etags = new Map<string, string>();
+const cheminRessource = (url: string) => url.split('?')[0]!;
+
+/** ETag connu pour une ressource (`/membres/…`), issu du dernier `GET` ou `PATCH` réussi. */
+export const lireEtag = (chemin: string): string | undefined => etags.get(cheminRessource(chemin));
+
+function memoriserEtag(url: string, reponse: Response) {
+  const etag = reponse.headers.get('ETag');
+  if (etag) etags.set(cheminRessource(url), etag);
+}
+
+/** Pour les tests : oublie les versions connues. */
+export const oublierEtags = () => etags.clear();
+
 async function lireCorps<T>(reponse: Response): Promise<T> {
   if (reponse.status === 204 || reponse.status === 205) return undefined as T;
   const type = reponse.headers.get('content-type') ?? '';
@@ -105,6 +123,7 @@ export async function clientApi<T>(url: string, init: RequestInit = {}): Promise
   }
 
   if (!reponse.ok) throw await versErreurApi(reponse);
+  memoriserEtag(url, reponse);
   return lireCorps<T>(reponse);
 }
 
