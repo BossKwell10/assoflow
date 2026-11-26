@@ -23,7 +23,7 @@ export async function creerApplication(options: { logger?: boolean } = {}): Prom
   const fastify = app.getHttpAdapter().getInstance();
   fastify.addHook('onRequest', (req, reply, done) => {
     void reply.header('x-request-id', req.id);
-    contexteStorage.enterWith({ requestId: String(req.id) });
+    contexteStorage.enterWith({ requestId: String(req.id), ip: req.ip });
     done();
   });
   app.enableShutdownHooks();

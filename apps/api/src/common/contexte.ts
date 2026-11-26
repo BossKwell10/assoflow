@@ -6,6 +6,8 @@ export interface ContexteRequete {
   associationId?: string;
   userId?: string;
   rolePlateforme?: 'super_admin' | 'support';
+  /** Adresse IP du client (audit). */
+  ip?: string;
 }
 
 export const contexteStorage = new AsyncLocalStorage<ContexteRequete>();
