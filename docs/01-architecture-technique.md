@@ -146,10 +146,10 @@ les variables `*_FILE` pointent vers ces fichiers.
 | `REDIS_URL_FILE` | `/run/secrets/redis_url` | oui |
 | `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET` | `https://s3.exemple.ci`, `ci-abj`, `assoflow-prod` | non |
 | `S3_ACCESS_KEY_FILE`, `S3_SECRET_KEY_FILE` | | oui |
-| `JWT_PRIVATE_KEY_FILE`, `JWT_PUBLIC_KEY_FILE` | clés Ed25519 | oui |
+| `JWT_PRIVATE_KEY_FILE`, `JWT_PUBLIC_KEY_FILE` | clés Ed25519 (PEM PKCS#8 / SPKI) ; absentes hors production → paire éphémère | oui |
 | `FIELD_ENCRYPTION_KEY_FILE` | clé AES-256 (32 octets, base64) | oui |
 | `OTP_PEPPER_FILE` | | oui |
-| `SMS_PROVIDERS` | `agregateur_a,agregateur_b` (ordre de préférence) | non |
+| `SMS_PROVIDERS` | `agregateur_a,agregateur_b` (ordre de préférence ; `journal` en local et en test) | non |
 | `SMS_<FOURNISSEUR>_API_KEY_FILE` | | oui |
 | `SENTRY_DSN_FILE` | DSN GlitchTip | oui |
 | `LOG_LEVEL` | `info` | non |

@@ -64,9 +64,12 @@ paths:
               - but
       responses:
         '204':
-          description: Succès sans contenu
+          description: Succès sans contenu (même réponse si le numéro n'a pas de compte ; aucun SMS n'est alors envoyé)
         '422':
           $ref: '#/components/responses/Invalide'
+        '429':
+          $ref: '#/components/responses/Erreur'
+          description: Plus de 3 demandes pour ce numéro en 15 min (en-tête Retry-After)
         default:
           $ref: '#/components/responses/Erreur'
       security: []
@@ -123,7 +126,9 @@ paths:
       - Authentification
       summary: Définir ou réinitialiser le mot de passe (après OTP)
       operationId: post_auth_mot_de_passe
-      description: 'Exigences : RF-004, RF-SUP-053.'
+      description: 'Exigences : RF-004, RF-SUP-053, RF-SUP-054. Le jeton OTP (but `inscription` ou `reinitialisation`)
+        est à usage unique. À la première définition (ou à un changement de version des textes), `accepteCgu` et
+        `accepteTraitementDonnees` doivent valoir true (sinon 422 VALIDATION). Révoque toutes les sessions.'
       requestBody:
         required: true
         content:
@@ -136,6 +141,18 @@ paths:
                 motDePasse:
                   type: string
                   minLength: 10
+                accepteCgu:
+                  type: boolean
+                  description: Acceptation des CGU (version courante)
+                accepteTraitementDonnees:
+                  type: boolean
+                  description: Consentement au traitement des données personnelles
+                canal:
+                  type: string
+                  enum:
+                  - console
+                  - mobile
+                  description: Canal de recueil du consentement (défaut mobile)
               required:
               - jetonOtp
               - motDePasse
@@ -231,7 +248,9 @@ paths:
       - Authentification
       summary: Démarrer l'activation TOTP
       operationId: post_auth_totp_activation
-      description: 'Exigences : RF-003.'
+      description: 'Exigences : RF-003. Bearer = access token, ou jeton intermédiaire `totp_activation` reçu à la
+        connexion (activation obligatoire avant la première connexion console d''un membre du bureau). 409 si le TOTP
+        est déjà actif.'
       responses:
         '200':
           description: Succès
@@ -258,7 +277,9 @@ paths:
       - Authentification
       summary: Confirmer TOTP et obtenir les codes de secours
       operationId: post_auth_totp_confirmation
-      description: 'Exigences : RF-003.'
+      description: 'Exigences : RF-003. Les 10 codes de secours ne sont affichés qu''une fois. Appelée avec le jeton
+        intermédiaire `totp_activation`, termine aussi la connexion : `session` est alors présente (et le cookie de
+        refresh posé pour la console). Code incorrect : 422 VALIDATION (champ `code`).'
       requestBody:
         required: true
         content:
@@ -282,6 +303,10 @@ paths:
                     type: array
                     items:
                       type: string
+                  session:
+                    $ref: '#/components/schemas/Session'
+                required:
+                - codesSecours
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
@@ -296,7 +321,9 @@ paths:
       - Authentification
       summary: Renouveler l'access token
       operationId: post_auth_refresh
-      description: 'Console : cookie HttpOnly + en-tête X-Requested-With. Mobile : refreshToken dans le corps.'
+      description: 'Console : cookie HttpOnly `assoflow_refresh` (Path=/v1/auth) + en-tête `X-Requested-With:
+        assoflow-console`, corps `{}`. Mobile : refreshToken dans le corps. Rotation à chaque usage ; la présentation
+        d''un refresh déjà utilisé révoque toute la session (401 SESSION_REVOQUEE).'
       requestBody:
         required: true
         content:
@@ -360,6 +387,9 @@ paths:
       - Authentification
       summary: Choisir l'association active
       operationId: post_auth_contexte
+      description: 'Renvoie un nouvel access token portant `aid` (le refresh token n''est pas renouvelé). 403
+        ACCES_REVOQUE sans accès actif au mandat en cours. À la connexion, l''association est choisie d''office si
+        l''utilisateur n''en a qu''une.'
       requestBody:
         required: true
         content:
@@ -6153,11 +6183,15 @@ components:
       - utilisateur
     EtapeTotp:
       type: object
+      description: '`totp` : saisir le code via POST /auth/totp. `totp_activation` : TOTP exigé mais pas encore
+        activé ; le jeton intermédiaire sert de Bearer pour /auth/totp/activation puis /auth/totp/confirmation.
+        Jeton valable 5 min.'
       properties:
         etape:
           type: string
           enum:
           - totp
+          - totp_activation
         jetonIntermediaire:
           type: string
       required:
