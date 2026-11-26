@@ -8,10 +8,11 @@ import { InfraModule } from './infra/infra.module.js';
 import { AssociationsModule } from './modules/associations/associations.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { HealthController } from './modules/health/health.controller.js';
+import { MembresModule } from './modules/membres/membres.module.js';
 import { UtilisateursModule } from './modules/utilisateurs/utilisateurs.module.js';
 
 @Module({
-  imports: [InfraModule, AuthModule, UtilisateursModule, AssociationsModule],
+  imports: [InfraModule, AuthModule, UtilisateursModule, AssociationsModule, MembresModule],
   controllers: [HealthController],
   providers: [
     { provide: APP_FILTER, useClass: ProblemeFilter },

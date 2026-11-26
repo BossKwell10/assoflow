@@ -105,6 +105,8 @@ export class AccesService {
       mandatFin?: string;
     },
     cleIdempotence?: string,
+    /** Complément exécuté dans la même transaction après la création (ex. lien membre ↔ compte). */
+    apresCreation?: (tx: Tx, acces: AccesDto) => Promise<void>,
   ): Promise<AccesDto> {
     const aid = auth.associationId!;
     const { reponse, rejouee, associationNom } = await this.db.tx(async (tx) => {
@@ -152,7 +154,9 @@ export class AccesService {
               mandatFin: p.mandatFin ?? null,
             },
           });
-          return this.lireDto(tx, id);
+          const dto = await this.lireDto(tx, id);
+          await apresCreation?.(tx, dto);
+          return dto;
         },
       );
       return { ...resultat, associationNom: nom.rows[0]?.nom ?? 'votre association' };

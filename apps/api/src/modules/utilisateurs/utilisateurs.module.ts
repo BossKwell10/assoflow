@@ -10,5 +10,6 @@ import { RolesService } from './roles.service.js';
   imports: [AuthModule],
   controllers: [AccesController, RolesController, PermissionsController],
   providers: [AccesService, RolesService],
+  exports: [AccesService],
 })
 export class UtilisateursModule {}
