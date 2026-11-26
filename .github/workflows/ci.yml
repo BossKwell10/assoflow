@@ -32,7 +32,7 @@ jobs:
       DATABASE_URL: postgres://assoflow_owner:assoflow@localhost:5432/assoflow
       DATABASE_APP_URL: postgres://assoflow_app:assoflow@localhost:5432/assoflow
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -59,7 +59,7 @@ jobs:
       matrix:
         app: [api, console]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v3
         with:
