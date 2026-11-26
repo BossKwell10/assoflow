@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
+import { oublierEtags } from './api/client';
 import { definirJeton } from './api/jeton';
 import { reinitialiserEtatSession } from './auth/etat';
 import { reinitialiserServeur, serveur } from './test/serveur';
@@ -29,12 +30,17 @@ window.ResizeObserver = ResizeObserverFactice as unknown as typeof ResizeObserve
 Element.prototype.scrollIntoView = () => {};
 window.scrollTo = (() => {}) as typeof window.scrollTo;
 
+// Écrans chargés à la demande (import dynamique) : le premier rendu d'un fichier de test peut dépasser
+// 1 s quand la CI construit et teste en parallèle.
+configure({ asyncUtilTimeout: 5000 });
+
 beforeAll(() => serveur.listen({ onUnhandledFrame: 'error' }));
 beforeEach(() => reinitialiserServeur());
 afterEach(() => {
   cleanup();
   serveur.resetHandlers();
   definirJeton(undefined);
+  oublierEtags();
   reinitialiserEtatSession();
 });
 afterAll(() => serveur.close());

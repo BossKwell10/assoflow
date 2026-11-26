@@ -12,6 +12,7 @@ import { ExigerPermission } from './auth/AccesRefuse';
 import { ExigerEspaceAssociation, ExigerSession } from './auth/Gardes';
 import { t } from './i18n';
 import { Coquille } from './layout/Coquille';
+import { validerRechercheFamilles, validerRechercheMembres } from './features/membres/recherche';
 import { APlusTard } from './routes/APlusTard';
 
 const rechercheRedirection = (recherche: Record<string, unknown>): { redirect?: string } =>
@@ -98,7 +99,6 @@ const espace = createRoute({
 });
 
 const ecrans: { path: string; titre: string; sprint: string; permission: Permission | Permission[] }[] = [
-  { path: '/membres', titre: t('menu.membres'), sprint: 'sprint 2', permission: 'membre.lire' },
   { path: '/cotisations', titre: t('menu.cotisations'), sprint: 'sprint 3', permission: 'cotisation.lire' },
   {
     path: '/tresorerie',
@@ -110,6 +110,30 @@ const ecrans: { path: string; titre: string; sprint: string; permission: Permiss
   { path: '/projets', titre: t('menu.projets'), sprint: 'phase 2', permission: 'projet.lire' },
   { path: '/rapports', titre: t('menu.rapports'), sprint: 'sprint 7', permission: 'rapport.lire' },
 ];
+
+/** Route de l'espace association protégée par permission ; le composant est chargé à la demande. */
+const ecran = <P extends string>(path: P, permission: Permission | Permission[], composant: RouteComponent) =>
+  createRoute({ getParentRoute: () => espace, path, component: protege(permission, composant) });
+
+// --- Membres (A2 à A7, sprint 2)
+const membres = createRoute({
+  getParentRoute: () => espace,
+  path: '/membres',
+  validateSearch: validerRechercheMembres,
+  component: protege(
+    'membre.lire',
+    lazyRouteComponent(() => import('./features/membres/ListeMembres'), 'ListeMembres'),
+  ),
+});
+const familles = createRoute({
+  getParentRoute: () => espace,
+  path: '/membres/familles',
+  validateSearch: validerRechercheFamilles,
+  component: protege(
+    'membre.lire',
+    lazyRouteComponent(() => import('./features/membres/Familles'), 'ListeFamilles'),
+  ),
+});
 
 export const routeTree = racine.addChildren([
   connexion,
@@ -125,6 +149,33 @@ export const routeTree = racine.addChildren([
         lazyRouteComponent(() => import('./routes/TableauDeBord'), 'TableauDeBord'),
       ),
     }),
+    membres,
+    familles,
+    ecran(
+      '/membres/familles/$id',
+      'membre.lire',
+      lazyRouteComponent(() => import('./features/membres/Familles'), 'FicheFamille'),
+    ),
+    ecran(
+      '/membres/doublons',
+      'membre.lire',
+      lazyRouteComponent(() => import('./features/membres/Doublons'), 'Doublons'),
+    ),
+    ecran(
+      '/membres/nouveau',
+      'membre.creer',
+      lazyRouteComponent(() => import('./features/membres/FormulaireMembre'), 'NouveauMembre'),
+    ),
+    ecran(
+      '/membres/$id',
+      'membre.lire',
+      lazyRouteComponent(() => import('./features/membres/FicheMembre'), 'FicheMembre'),
+    ),
+    ecran(
+      '/membres/$id/modifier',
+      'membre.modifier',
+      lazyRouteComponent(() => import('./features/membres/FormulaireMembre'), 'ModificationMembre'),
+    ),
     ...ecrans.map((e) =>
       createRoute({
         getParentRoute: () => espace,
@@ -140,6 +191,24 @@ export const routeTree = racine.addChildren([
         lazyRouteComponent(() => import('./features/parametres/Parametres'), 'Parametres'),
       ),
     }),
+    ecran(
+      '/parametres/association',
+      'association.modifier',
+      lazyRouteComponent(
+        () => import('./features/parametres/ParametresAssociation'),
+        'ParametresAssociation',
+      ),
+    ),
+    ecran(
+      '/parametres/exercices',
+      ['exercice.gerer', 'exercice.cloturer'],
+      lazyRouteComponent(() => import('./features/parametres/Exercices'), 'Exercices'),
+    ),
+    ecran(
+      '/parametres/categories',
+      'association.modifier',
+      lazyRouteComponent(() => import('./features/parametres/Categories'), 'Categories'),
+    ),
     createRoute({
       getParentRoute: () => espace,
       path: '/parametres/utilisateurs',
