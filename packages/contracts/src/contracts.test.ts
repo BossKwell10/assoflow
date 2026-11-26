@@ -3,6 +3,8 @@ import {
   PERMISSIONS,
   PERMISSIONS_RESERVEES_PRESIDENT,
   ROLES_SYSTEME,
+  STATUTS,
+  definirStatut,
   formatMontant,
   masquerTelephone,
   normaliserTelephone,
@@ -50,5 +52,17 @@ describe('rôles système', () => {
   });
   it('le président ne paie pas les dépenses (séparation des tâches)', () => {
     expect(ROLES_SYSTEME.president.permissions).not.toContain('depense.payer');
+  });
+});
+
+describe('dictionnaire des statuts (docs/08 §2)', () => {
+  it('associe un libellé et un ton à chaque statut', () => {
+    expect(definirStatut('membreEtat', 'suspendu')).toEqual({ libelle: 'Suspendu', ton: 'alerte' });
+    expect(definirStatut('exercice', 'cloture')).toEqual({ libelle: 'Clôturé', ton: 'neutre' });
+    for (const domaine of Object.values(STATUTS))
+      for (const d of Object.values(domaine)) expect(d.libelle).not.toBe('');
+  });
+  it('affiche une valeur inconnue en gris', () => {
+    expect(definirStatut('membreEtat', 'inconnu')).toEqual({ libelle: 'inconnu', ton: 'neutre' });
   });
 });
