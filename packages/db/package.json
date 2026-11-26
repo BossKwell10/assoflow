@@ -1,0 +1,16 @@
+{
+  "name": "@assoflow/db",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Migrations SQL et outillage base de données",
+  "type": "module",
+  "scripts": {
+    "migrate": "node scripts/migrate.mjs",
+    "lint": "eslint scripts",
+    "typecheck": "echo 'Pas de TypeScript dans ce paquet'",
+    "test": "echo 'Couvert par les tests integration de apps/api'"
+  },
+  "dependencies": {
+    "pg": "^8.16.0"
+  }
+}

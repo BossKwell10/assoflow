@@ -1,0 +1,24 @@
+# Infrastructure de développement local uniquement (jamais en production).
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: assoflow_owner
+      POSTGRES_PASSWORD: assoflow
+      POSTGRES_DB: assoflow
+    ports: ['5432:5432']
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/dev/postgres-init.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U assoflow_owner -d assoflow']
+      interval: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    ports: ['6379:6379']
+    volumes: [redisdata:/data]
+volumes:
+  pgdata:
+  redisdata:

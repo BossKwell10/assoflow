@@ -1,0 +1,123 @@
+# 03 — Règles de gestion
+
+Chaque règle porte un identifiant `RG-<DOMAINE>-<NNN>` cité dans le code (commentaire) et dans les tests
+(nom du test). Les règles marquées **[D]** sont des décisions prises pour combler un manque du cahier des
+charges ; elles sont à confirmer avec les associations pilotes.
+
+## 1. Association (tenant)
+
+| ID | Règle |
+| --- | --- |
+| RG-ASS-001 | La création d'un tenant (super-admin ou validation d'une demande) crée dans la même transaction : les 5 rôles système, l'accès `president` pour l'administrateur désigné, un compte `Caisse`, les catégories de dépense par défaut (Fonctionnement, Projet, Aide sociale, Autre), une catégorie de membre « Membre ordinaire » et l'exercice couvrant la date du jour. Objectif : tenant utilisable en moins de 5 minutes (critère d'acceptation 6). |
+| RG-ASS-002 | La devise est XOF et n'est pas modifiable au MVP (RF-012, D-007). |
+| RG-ASS-003 | **[D]** `seuil_double_validation` par défaut : 100 000 FCFA ; modifiable par le président uniquement, tracé dans l'audit. |
+| RG-ASS-004 | Une association `suspendue` est en lecture seule (console et sync pull autorisés, sync push et écritures refusés avec `TENANT_SUSPENDU`). Une association `archivee` n'est plus accessible qu'au super-admin. |
+
+## 2. Exercices
+
+| ID | Règle |
+| --- | --- |
+| RG-EXE-001 | Les exercices d'une association ne se chevauchent pas. Durée par défaut : 12 mois à partir de `mois_debut_exercice`. |
+| RG-EXE-002 | Toute écriture financière (paiement, dépense, transfert, mouvement) est rattachée à l'exercice qui contient sa date métier. Si aucun exercice ouvert ne la contient → erreur `EXERCICE_FERME`. |
+| RG-EXE-003 | Clôture d'un exercice (permission `exercice.cloturer`) : refusée s'il reste des dépenses `soumise` ou `validee` datées dans l'exercice. Après clôture, plus aucune écriture datée dans la période, y compris les annulations. |
+| RG-EXE-004 | L'exercice suivant est créé automatiquement 30 jours avant la fin de l'exercice courant (job planifié). |
+
+## 3. Membres
+
+| ID | Règle |
+| --- | --- |
+| RG-MBR-001 | Le numéro `MBR-NNNNNN` est attribué par le serveur à la première réception, sans trou, jamais réutilisé. |
+| RG-MBR-002 | Champs obligatoires : nom, prénoms, et au moins un moyen de contact parmi téléphone, ou rattachement à une famille dont le chef a un téléphone (membres sans téléphone, RF-060). |
+| RG-MBR-003 | Doublon probable (même nom + prénoms + téléphone, ou même téléphone + même date de naissance) : avertissement non bloquant, l'utilisateur confirme. |
+| RG-MBR-004 | `etat = suspendu` : aucune nouvelle échéance générée, paiements encore acceptés, pas de rappel. `etat = desactive` : membre masqué des listes par défaut, aucune échéance ni notification, historique conservé. |
+| RG-MBR-005 | **[D]** Passage automatique `actif → dormant` (job nocturne) si le membre a au moins une échéance en retard et aucun paiement depuis `jours_retard_dormant` jours (180 par défaut). Retour `dormant → actif` automatique au premier paiement. `honoraire` et `bienfaiteur` ne changent que manuellement. |
+| RG-MBR-006 | Un membre n'appartient qu'à une famille. Le chef de famille doit être membre de cette famille. |
+| RG-MBR-007 | Import CSV/Excel (RF-024) : en deux temps, *analyse* (rapport ligne par ligne : créée, doublon probable, erreur) puis *confirmation*. 5 000 lignes maximum par fichier. Colonnes : `nom, prenoms, telephone, sexe, date_naissance, village_origine, lieu_residence, pays_residence, categorie, famille, date_adhesion`. Téléphones normalisés en E.164 (préfixe +225 par défaut). |
+| RG-MBR-008 | Carte de membre (RF-023, Should) : QR code contenant uniquement `assoflow:m:<association_id>:<membre_id>` signé (HMAC), aucune donnée personnelle. |
+| RG-MBR-009 | Anonymisation sur demande (RF-SUP-055) : nom, prénoms, téléphone, email, photo, date de naissance remplacés ou effacés ; numéro, paiements et imputations conservés (obligation de traçabilité financière). Irréversible, permission `membre.anonymiser`, motif obligatoire. |
+
+## 4. Cotisations et échéancier
+
+| ID | Règle |
+| --- | --- |
+| RG-COT-001 | Une campagne `brouillon` est modifiable librement et ne génère rien. |
+| RG-COT-010 | L'**activation** génère les échéances pour chaque membre ciblé : `etat = actif` et `statut_adhesion ∈ {actif, dormant}`, appartenant aux `categories_cibles` (toutes si vide). **[D]** Les membres honoraires et bienfaiteurs ne sont pas ciblés par défaut ; ils peuvent être ajoutés individuellement. |
+| RG-COT-011 | Périodes : `unique` → 1 échéance à `date_debut` ; `mensuelle` → une par mois civil entre `date_debut` et `date_fin`, échéance au `jour_echeance` du mois ; `trimestrielle`, `semestrielle`, `annuelle` : même principe par période. Libellé lisible (« Mars 2027 », « T2 2027 »). |
+| RG-COT-012 | Un membre ajouté après l'activation reçoit les échéances des périodes **non encore échues** à sa date d'adhésion (pas de rattrapage). Un rattrapage est possible manuellement. |
+| RG-COT-013 | Après activation, seuls modifiables : libellé, prolongation de `date_fin` (ajoute des périodes), montant des échéances **futures et sans imputation** (tracé). La réduction de `date_fin` supprime les échéances futures sans imputation uniquement. |
+| RG-COT-014 | Exonération d'une échéance (permission `cotisation.exonerer`) : motif obligatoire, refusée si l'échéance a déjà des imputations. |
+| RG-COT-015 | Clôture d'une campagne : plus de génération ; les échéances restantes restent dues. |
+| RG-COT-020 | **Imputation** (calculée par le serveur, jamais par l'appareil) d'un paiement : 1) si `campagne_id` est renseigné, échéances non soldées de cette campagne par date croissante ; 2) puis toutes les échéances **échues** non soldées du membre, par date croissante ; 3) puis les échéances à venir par date croissante ; 4) le reste devient une **avance** (imputation sans échéance). |
+| RG-COT-021 | Paiement groupé famille (RF-038) : même ordre que RG-COT-020 appliqué à l'ensemble des échéances des membres actifs de la famille, triées par date puis par numéro de membre. |
+| RG-COT-022 | Les avances sont imputées automatiquement sur les nouvelles échéances dès leur génération (imputation négative sur l'avance + positive sur l'échéance, même `paiement_id`). |
+| RG-COT-030 | Modes de paiement : espèces, mobile money (opérateur obligatoire, référence de transaction recommandée), virement, chèque. Au MVP, le mobile money est **déclaratif** : aucune vérification auprès de l'opérateur. |
+| RG-COT-031 | **[D]** Montant maximum d'un paiement : 5 000 000 FCFA. Au-delà de 500 000 FCFA, l'interface demande une confirmation explicite. |
+| RG-COT-032 | Un paiement est rattaché à un compte de trésorerie : par défaut `Caisse` pour les espèces, le compte mobile money ou banque correspondant sinon. Il crée un mouvement `entree` dans la même transaction. |
+| RG-COT-040 | **Annulation** (permission `paiement.annuler`) : motif obligatoire, seulement si l'exercice est ouvert, une seule fois par paiement. Produit : une ligne `annulation` (nouveau numéro de reçu), les contre-imputations, un mouvement `sortie`, un SMS d'information au membre. Le paiement d'origine n'est jamais modifié. |
+| RG-COT-041 | **[D]** Un trésorier ne peut annuler que ses propres paiements de moins de 48 h ; au-delà ou pour un autre saisisseur, la permission `paiement.annuler_tout` (président) est requise. |
+| RG-COT-050 | Rappels automatiques (RF-036) : J-7, J-1 et J+7 de chaque échéance non soldée, si le membre a un canal de contact. Regroupement : **un seul message par membre et par jour**, listant les montants dus. Pas de rappel aux membres suspendus, désactivés ou ayant `canal_prefere = 'aucun'`. |
+
+## 5. Numérotation
+
+| ID | Règle |
+| --- | --- |
+| RG-NUM-001 | Formats serveur : membre `MBR-000123` ; reçu `REC-AAAA-000145` ; dépense `DEP-AAAA-000012`. `AAAA` = année civile de réception par le serveur. Séquence sans trou par association, type et année (`app_prochain_numero`). |
+| RG-NUM-002 | Hors ligne, l'appareil attribue un numéro provisoire `<prefixe_recu>-<compteur local>` (ex. `T02-000145`), affiché sur le reçu local avec la mention « provisoire ». Le reçu SMS envoyé après synchronisation porte le numéro définitif **et** le provisoire. |
+| RG-NUM-003 | Le préfixe d'appareil est attribué par le serveur à l'enregistrement de l'appareil (lettre + 2 ou 3 chiffres), unique par association, jamais réattribué. |
+
+## 6. Dépenses et validation
+
+| ID | Règle |
+| --- | --- |
+| RG-DEP-001 | Création (permission `depense.creer`) : libellé, montant, date, catégorie, bénéficiaire, compte, projet optionnel. Possible hors ligne ; la dépense est `soumise` à sa réception par le serveur. |
+| RG-DEP-002 | `validations_requises = 2` si `montant > seuil_double_validation`, sinon 1 (RF-ADM-033). Valeur figée à la création. |
+| RG-DEP-003 | Le demandeur ne peut jamais valider sa propre dépense, même par délégation. |
+| RG-DEP-004 | Valideurs : détenteurs de la permission `depense.valider` (président par défaut) ou bénéficiaires d'une délégation active de cette permission. En double validation, les deux valideurs sont des personnes distinctes ; **[D]** l'une des deux doit être le président ou son délégataire. |
+| RG-DEP-005 | Un rejet (motif obligatoire) termine le workflow : `rejetee`. Le demandeur peut créer une nouvelle dépense. |
+| RG-DEP-006 | Quand le nombre d'approbations atteint `validations_requises` → `validee`. Le demandeur est notifié de chaque décision (RF-ADM-034). |
+| RG-DEP-007 | La validation exige le réseau (décision 7 de la revue) : elle n'est effective qu'enregistrée par le serveur. |
+| RG-DEP-008 | Paiement de la dépense (permission `depense.payer`) : statut `validee` requis, **au moins une pièce justificative** reçue (RF-041 ; photo d'une attestation acceptée), solde du compte ≥ montant sinon erreur `SOLDE_INSUFFISANT`. Crée le mouvement `sortie` dans la même transaction. |
+| RG-DEP-009 | Annulation possible depuis `soumise` ou `validee` uniquement (permission `depense.annuler`, motif obligatoire). Une dépense payée ne s'annule pas : une erreur se corrige par un ajustement (RG-TRE-004). |
+| RG-DEP-010 | Montant, compte, demandeur et numéro sont figés après création (trigger). Libellé, catégorie, bénéficiaire et projet restent modifiables tant que le statut est `soumise`, avec trace d'audit. |
+| RG-DEP-011 | Alerte (RF-045) quand un paiement de dépense ferait passer le compte sous `seuil_alerte_solde` : avertissement non bloquant + notification au président. |
+
+## 7. Trésorerie
+
+| ID | Règle |
+| --- | --- |
+| RG-TRE-001 | Le journal `mouvements` est la seule source des soldes. Il n'est alimenté que par `TresorerieService`. |
+| RG-TRE-002 | Transfert entre comptes (permission `tresorerie.transferer`) : une sortie et une entrée dans la même transaction, même date ; solde source suffisant requis. |
+| RG-TRE-003 | Le solde d'un compte ne peut pas devenir négatif par une sortie, sauf compte de type `banque` marqué découvert autorisé (hors MVP). |
+| RG-TRE-004 | Ajustement (permission `tresorerie.ajuster`, président) : mouvement `ajustement` avec motif et pièce obligatoires, notification automatique au commissaire aux comptes. |
+| RG-TRE-005 | Rapprochement bancaire (RF-047, Could) : hors MVP. |
+
+## 8. Projets
+
+| ID | Règle |
+| --- | --- |
+| RG-PRJ-001 | Un projet `cloture` ou `abandonne` n'accepte plus de dépense ni de campagne. |
+| RG-PRJ-002 | Alerte de dépassement (RF-ADM-002) quand Σ dépenses payées du projet > budget. |
+| RG-PRJ-003 | Clôture (RF-056) : bilan texte obligatoire, génération automatique du rapport de projet PDF (recettes affectées, dépenses, écart au budget, photos). |
+| RG-PRJ-004 | L'avancement (%) est saisi manuellement ; il n'est pas déduit des dépenses. |
+
+## 9. Transparence et rapports
+
+| ID | Règle |
+| --- | --- |
+| RG-RAP-001 | Tableau de bord (RF-070) : recettes et dépenses de l'exercice, solde par compte, nombre de membres actifs, taux de recouvrement, dépenses en attente de validation, projets en dépassement. |
+| RG-RAP-002 | **Taux de recouvrement** d'une période = Σ imputations sur les échéances échues dans la période ÷ Σ montants dus de ces échéances (exonérées exclues). |
+| RG-RAP-003 | Rapport financier (RF-071) mensuel, trimestriel, annuel : solde d'ouverture, entrées par origine, sorties par catégorie, solde de clôture par compte, liste des dépenses, liste des annulations. PDF et Excel (RF-072), générés en tâche asynchrone. |
+| RG-RAP-004 | **[D]** Journal public (RF-074) visible par tous les membres de l'association : mouvements avec date, libellé, montant, catégorie. Les paiements y apparaissent avec le **numéro** du membre, jamais son nom ni son téléphone. Chaque membre voit en clair ses propres paiements. Désactivable par le président (`journal_public_actif`). |
+| RG-RAP-005 | Les rapports sont calculés sur le réplica PostgreSQL quand il est disponible (lecture seule). |
+
+## 10. Conservation des données (RF-SUP-044)
+
+| Donnée | Durée | Ensuite |
+| --- | --- | --- |
+| Écritures financières, reçus, audit | 10 ans après clôture de l'exercice **[D, à confirmer juridiquement]** | Archivage froid |
+| Membres désactivés | 5 ans après désactivation | Anonymisation (RG-MBR-009) |
+| Codes OTP | 24 h | Suppression |
+| Sessions expirées ou révoquées | 90 jours | Suppression |
+| Notifications envoyées | 13 mois | Suppression du contenu, compteurs conservés |
+| Exports et rapports générés | 7 jours | Suppression du fichier |
+| Sauvegardes | 90 jours (RNF-011) | Rotation |
