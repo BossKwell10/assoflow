@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # Image unique API + worker (APP_ROLE choisit le point d'entrée). Construite depuis la racine du dépôt.
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 RUN corepack enable
 WORKDIR /repo
 
@@ -12,7 +12,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --froze
 RUN pnpm turbo run build --filter=@assoflow/api...
 RUN pnpm --filter @assoflow/api deploy --legacy --prod /out
 
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 RUN apk add --no-cache tini
