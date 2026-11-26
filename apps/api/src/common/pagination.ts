@@ -33,3 +33,42 @@ export function lireLimite(brut: string | undefined, defaut = 50, max = 200): nu
   }
   return n;
 }
+
+/**
+ * Curseur de tri générique (keyset) : `[tri, valeur de la clé de tri, id]`. Le tri est inclus pour refuser
+ * un curseur obtenu avec un autre ordre.
+ */
+export interface PositionTri {
+  tri: string;
+  valeur: string;
+  id: string;
+}
+
+export function encoderCurseurTri(p: PositionTri): string {
+  return Buffer.from(JSON.stringify([p.tri, p.valeur, p.id])).toString('base64url');
+}
+
+export function decoderCurseurTri(curseur: string | undefined, tri: string): PositionTri | null {
+  if (!curseur) return null;
+  try {
+    const [t, valeur, id] = JSON.parse(Buffer.from(curseur, 'base64url').toString('utf8')) as unknown[];
+    if (t === tri && typeof valeur === 'string' && typeof id === 'string' && id.length <= 64) {
+      return { tri, valeur, id };
+    }
+  } catch {
+    // curseur illisible : traité ci-dessous
+  }
+  throw new ErreurMetier('VALIDATION', 'Curseur invalide', [
+    { champ: 'curseur', code: 'INVALIDE', message: 'Curseur invalide' },
+  ]);
+}
+
+/** `?total=true` (docs/07 §3) : le total n'est calculé que sur demande. */
+export function lireBooleen(brut: string | undefined, champ: string): boolean | undefined {
+  if (brut === undefined) return undefined;
+  if (brut === 'true') return true;
+  if (brut === 'false') return false;
+  throw new ErreurMetier('VALIDATION', 'Booléen attendu', [
+    { champ, code: 'INVALIDE', message: 'true ou false attendu' },
+  ]);
+}

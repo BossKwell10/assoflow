@@ -1,6 +1,6 @@
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { decodeJwt } from 'jose';
-import { randomInt } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { expect } from 'vitest';
 import { creerApplication } from '../src/bootstrap.js';
@@ -45,7 +45,7 @@ export async function demarrer(): Promise<Banc> {
   };
 }
 
-type Methode = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Methode = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 export async function appeler(
   b: Banc,
@@ -94,6 +94,24 @@ export async function connecterMobile(b: Banc, telephone: string, motDePasse = M
   };
 }
 
+/** Première connexion console d'un membre du bureau (activation TOTP, docs/04 §1) : jeton `can = console`. */
+export async function connecterConsole(b: Banc, telephone: string, motDePasse = MOT_DE_PASSE) {
+  const r = await appeler(b, 'POST', '/v1/auth/connexion', {
+    corps: { identifiant: telephone, motDePasse, canal: 'console' },
+  });
+  expect(r.statusCode, r.body).toBe(200);
+  expect(r.json().etape).toBe('totp_activation');
+  const intermediaire = r.json().jetonIntermediaire as string;
+  const act = await appeler(b, 'POST', '/v1/auth/totp/activation', { jeton: intermediaire });
+  expect(act.statusCode, act.body).toBe(200);
+  const conf = await appeler(b, 'POST', '/v1/auth/totp/confirmation', {
+    jeton: intermediaire,
+    corps: { code: codeTotp(act.json().secret as string) },
+  });
+  expect(conf.statusCode, conf.body).toBe(200);
+  return conf.json().session.accessToken as string;
+}
+
 export function codeTotp(secretBase32: string, instantMs = Date.now()): string {
   return totp(decoderBase32(secretBase32), instantMs);
 }
@@ -101,3 +119,38 @@ export function codeTotp(secretBase32: string, instantMs = Date.now()): string {
 export function claims(jeton: string) {
   return decodeJwt(jeton) as Record<string, unknown>;
 }
+
+/** Invite une personne avec le rôle donné (par le président), active son compte et renvoie son jeton mobile. */
+export async function jetonPourRole(b: Banc, jetonPresident: string, roleId: string): Promise<string> {
+  const telephone = telephoneFictif();
+  const r = await appeler(b, 'POST', '/v1/acces', {
+    jeton: jetonPresident,
+    corps: { telephone, nom: 'Testeur', prenoms: 'Rôle', roleId },
+  });
+  expect(r.statusCode, r.body).toBe(201);
+  await activerCompte(b, telephone);
+  return (await connecterMobile(b, telephone)).accessToken;
+}
+
+/** Corps multipart/form-data avec une seule partie fichier (logo, photo). */
+export function multipart(contenu: Buffer, nomFichier: string, type: string, champ = 'fichier') {
+  const frontiere = `----assoflow${randomUUID()}`;
+  return {
+    corps: Buffer.concat([
+      Buffer.from(
+        `--${frontiere}\r\nContent-Disposition: form-data; name="${champ}"; filename="${nomFichier}"\r\n` +
+          `Content-Type: ${type}\r\n\r\n`,
+      ),
+      contenu,
+      Buffer.from(`\r\n--${frontiere}--\r\n`),
+    ]),
+    entetes: { 'content-type': `multipart/form-data; boundary=${frontiere}` },
+  };
+}
+
+/** Images minimales reconnues par leurs magic bytes. */
+export const IMAGES = {
+  png: Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64, 1)]),
+  jpeg: Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64, 2)]),
+  webp: Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 '), Buffer.alloc(64, 3)]),
+};

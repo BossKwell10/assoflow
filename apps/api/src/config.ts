@@ -25,6 +25,19 @@ const schema = z.object({
   OTP_PEPPER: z.string().min(16).optional(),
   /** Fournisseurs SMS par ordre de préférence. Sprint 1 : `journal` uniquement (docs/06 §4.1). */
   SMS_PROVIDERS: z.string().default('journal'),
+  /** Stockage objet S3 compatible (docs/01 §6). Sans `S3_BUCKET` : stockage local sur disque (hors production). */
+  S3_ENDPOINT: z.url().optional(),
+  S3_REGION: z.string().min(1).default('ci-abj'),
+  S3_BUCKET: z.string().min(1).optional(),
+  S3_ACCESS_KEY: z.string().min(1).optional(),
+  S3_SECRET_KEY: z.string().min(1).optional(),
+  /** Adressage « chemin » (MinIO, Ceph) plutôt que sous-domaine. */
+  S3_FORCE_PATH_STYLE: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  /** Dossier du stockage local (développement, tests) ; défaut : dossier temporaire du système. */
+  STOCKAGE_LOCAL_DIR: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   MIN_APP_VERSION: z
     .string()
@@ -49,7 +62,16 @@ export function chargerConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const config = resultat.data;
   if (config.NODE_ENV === 'production') {
     const manquantes = (
-      ['DATABASE_APP_URL', 'JWT_PRIVATE_KEY', 'JWT_PUBLIC_KEY', 'FIELD_ENCRYPTION_KEY', 'OTP_PEPPER'] as const
+      [
+        'DATABASE_APP_URL',
+        'JWT_PRIVATE_KEY',
+        'JWT_PUBLIC_KEY',
+        'FIELD_ENCRYPTION_KEY',
+        'OTP_PEPPER',
+        'S3_BUCKET',
+        'S3_ACCESS_KEY',
+        'S3_SECRET_KEY',
+      ] as const
     ).filter((cle) => !config[cle]);
     if (manquantes.length > 0) {
       throw new Error(`Configuration invalide — ${manquantes.join(', ')} obligatoire(s) en production`);
