@@ -7,6 +7,8 @@ export interface StockageObjets {
   deposer(cle: string, contenu: Buffer, typeMime: string): Promise<void>;
   /** Suppression best effort (un objet absent n'est pas une erreur). */
   supprimer(cle: string): Promise<void>;
+  /** Contenu d'un objet (génération de PDF côté serveur) ; `null` s'il n'existe pas. */
+  contenu(cle: string): Promise<Buffer | null>;
   /** URL de lecture temporaire (5 min, docs/07 §6) : présignée (S3) ou servie et signée par l'API (local). */
   urlLecture(cle: string): Promise<string>;
 }

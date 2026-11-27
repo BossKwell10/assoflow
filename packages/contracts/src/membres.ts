@@ -137,3 +137,16 @@ export const associationMajSchema = z
   })
   .partial();
 export type AssociationMaj = z.infer<typeof associationMajSchema>;
+
+/**
+ * `POST /membres/import/{tacheId}/confirmer` : le bureau atteste avoir recueilli le consentement des membres
+ * importés (RF-SUP-054, enregistré avec le canal `papier`).
+ */
+export const importConfirmationSchema = z.object({
+  inclureDoublons: z.boolean().optional(),
+  attestationConsentement: z.literal(
+    true,
+    'Attestez que les membres importés ont donné leur accord pour le traitement de leurs données',
+  ),
+});
+export type ImportConfirmation = z.infer<typeof importConfirmationSchema>;

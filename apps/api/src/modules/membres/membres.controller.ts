@@ -20,6 +20,7 @@ import {
   ETATS_MEMBRE,
   familleMajSchema,
   familleSchema,
+  importConfirmationSchema,
   membreCreationSchema,
   membreMajSchema,
   motifSchema,
@@ -29,11 +30,14 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { AuthRequete } from '../../common/auth/auth-requete.js';
 import { Auth, Permission } from '../../common/auth/decorateurs.js';
-import { lireImageMultipart } from '../../common/images.js';
+import { lireFichierMultipart, lireImageMultipart } from '../../common/images.js';
 import { lireBooleen, lireLimite } from '../../common/pagination.js';
 import { valider } from '../../common/validation.js';
 import { idPipe } from '../utilisateurs/acces.controller.js';
 import { AyantsDroitService } from './ayants-droit.service.js';
+import { CarteMembreService } from './carte.service.js';
+import { ImportMembresService } from './import/import.service.js';
+import { modeleImportXlsx } from './import/lecture-fichier.js';
 import { FamillesService } from './familles.service.js';
 import { MembresRequetes, TRIS_MEMBRES } from './membres.requetes.js';
 import { MembresService } from './membres.service.js';
@@ -58,13 +62,15 @@ const pageSchema = z.object({
   curseur: z.string().optional(),
 });
 
-/** Membres (E3-01 à E3-04, E3-06, E3-07, E3-11). */
+/** Membres (E3-01 à E3-04, E3-06 à E3-09, E3-11). */
 @Controller('membres')
 export class MembresController {
   constructor(
     private readonly membres: MembresService,
     private readonly requetes: MembresRequetes,
     private readonly ayantsDroit: AyantsDroitService,
+    private readonly imports: ImportMembresService,
+    private readonly cartes: CarteMembreService,
   ) {}
 
   @Get()
@@ -91,6 +97,42 @@ export class MembresController {
     const { dto, cree } = await this.membres.creer(auth, valider(membreCreationSchema, corps));
     void reply.status(cree ? 201 : 200);
     return dto;
+  }
+
+  /** RF-024 : modèle Excel de l'import (écran A6, étape 1). */
+  @Get('import/modele')
+  @Permission('membre.importer')
+  async modeleImport(@Res({ passthrough: true }) reply: FastifyReply) {
+    void reply
+      .type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      .header('content-disposition', 'attachment; filename="modele-import-membres.xlsx"');
+    return modeleImportXlsx();
+  }
+
+  /** RF-024, RG-MBR-007 : structure vérifiée immédiatement (422), analyse ligne par ligne en tâche (202). */
+  @Post('import')
+  @HttpCode(202)
+  @Permission('membre.importer')
+  async importer(@Auth() auth: AuthRequete, @Req() req: FastifyRequest) {
+    return this.imports.demanderAnalyse(auth, await lireFichierMultipart(req));
+  }
+
+  @Get('import/:tacheId')
+  @Permission('membre.importer')
+  rapportImport(@Auth() auth: AuthRequete, @Param('tacheId', idPipe) tacheId: string) {
+    return this.imports.rapport(auth, tacheId);
+  }
+
+  @Post('import/:tacheId/confirmer')
+  @HttpCode(202)
+  @Permission('membre.importer')
+  confirmerImport(
+    @Auth() auth: AuthRequete,
+    @Param('tacheId', idPipe) tacheId: string,
+    @Body() corps: unknown,
+  ) {
+    const c = valider(importConfirmationSchema, corps);
+    return this.imports.confirmer(auth, tacheId, c.inclureDoublons ?? false);
   }
 
   @Get('doublons')
@@ -175,6 +217,15 @@ export class MembresController {
   historique(@Param('id', idPipe) id: string, @Query() query: unknown) {
     const f = valider(pageSchema, query);
     return this.requetes.historique(id, lireLimite(f.limite), f.curseur);
+  }
+
+  /** RF-023, RG-MBR-008 : carte PDF (format ID-1) avec QR signé. */
+  @Get(':id/carte')
+  @Permission('membre.lire')
+  async carte(@Param('id', idPipe) id: string, @Res({ passthrough: true }) reply: FastifyReply) {
+    const { contenu, nomFichier } = await this.cartes.pdf(id);
+    void reply.type('application/pdf').header('content-disposition', `inline; filename="${nomFichier}"`);
+    return contenu;
   }
 
   @Get(':id/ayants-droit')

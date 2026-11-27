@@ -35,6 +35,22 @@ export const STATUTS = {
     en_retard: { libelle: 'En retard', ton: 'alerte' },
     exoneree: { libelle: 'Exonérée', ton: 'neutre' },
   },
+  campagne: {
+    brouillon: { libelle: 'Brouillon', ton: 'neutre' },
+    active: { libelle: 'Active', ton: 'succes' },
+    cloturee: { libelle: 'Clôturée', ton: 'neutre' },
+  },
+  tache: {
+    en_attente: { libelle: 'En attente', ton: 'attente' },
+    en_cours: { libelle: 'En cours', ton: 'attente' },
+    terminee: { libelle: 'Terminée', ton: 'succes' },
+    echec: { libelle: 'Échec', ton: 'alerte' },
+  },
+  ligneImport: {
+    a_creer: { libelle: 'À créer', ton: 'succes' },
+    doublon_probable: { libelle: 'Doublon probable', ton: 'attente' },
+    erreur: { libelle: 'Erreur', ton: 'alerte' },
+  },
   acces: {
     actif: { libelle: 'Actif', ton: 'succes' },
     revoque: { libelle: 'Révoqué', ton: 'alerte' },

@@ -20,6 +20,8 @@ export class SecretsService {
   readonly clePubliqueJwt: KeyObject;
   readonly cleChiffrement: Buffer;
   readonly poivreOtp: Buffer;
+  /** Clé HMAC des QR codes de carte de membre (RG-MBR-008). */
+  readonly cleQr: Buffer;
 
   constructor(@Inject(CONFIG) config: Config) {
     if (config.JWT_PRIVATE_KEY && config.JWT_PUBLIC_KEY) {
@@ -45,6 +47,12 @@ export class SecretsService {
     } else {
       this.exigerHorsProduction(config, 'OTP_PEPPER');
       this.poivreOtp = randomBytes(32);
+    }
+    if (config.QR_SIGNING_KEY) {
+      this.cleQr = Buffer.from(config.QR_SIGNING_KEY, 'utf8');
+    } else {
+      this.exigerHorsProduction(config, 'QR_SIGNING_KEY');
+      this.cleQr = randomBytes(32);
     }
   }
 

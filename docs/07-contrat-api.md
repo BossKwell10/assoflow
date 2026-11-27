@@ -161,6 +161,7 @@ Généré depuis `openapi.yaml` ; la colonne « Exigences » renvoie au cahier d
 | `GET` | `/v1/membres` | `membre.lire` | Rechercher et filtrer les membres | RF-025 |
 | `POST` | `/v1/membres` | `membre.creer` | Créer un membre | RF-020 |
 | `GET` | `/v1/membres/doublons` | `membre.lire` | Membres marqués doublon probable |  |
+| `GET` | `/v1/membres/import/modele` | `membre.importer` | Modèle Excel de l'import | RF-024 |
 | `POST` | `/v1/membres/import` | `membre.importer` | Analyser un fichier d'import (CSV/XLSX) | RF-024 |
 | `GET` | `/v1/membres/import/{tacheId}` | `membre.importer` | Rapport d'analyse d'import |  |
 | `POST` | `/v1/membres/import/{tacheId}/confirmer` | `membre.importer` | Confirmer l'import analysé | RF-024 |
@@ -196,10 +197,12 @@ Généré depuis `openapi.yaml` ; la colonne « Exigences » renvoie au cahier d
 | `POST` | `/v1/campagnes` | `cotisation.gerer` | Créer une campagne (brouillon) | RF-030, RF-037 |
 | `GET` | `/v1/campagnes/{id}` | `cotisation.lire` | Détail d'une campagne |  |
 | `PATCH` | `/v1/campagnes/{id}` | `cotisation.gerer` | Modifier une campagne |  |
+| `GET` | `/v1/campagnes/{id}/apercu` | `cotisation.lire` | Aperçu de l'échéancier (membres ciblés, périodes, montant) | RF-030 |
 | `POST` | `/v1/campagnes/{id}/activer` | `cotisation.gerer` | Activer et générer l'échéancier | RF-031 |
 | `POST` | `/v1/campagnes/{id}/cloturer` | `cotisation.gerer` | Clôturer la campagne |  |
 | `POST` | `/v1/campagnes/{id}/membres` | `cotisation.gerer` | Ajouter des membres à la campagne |  |
 | `GET` | `/v1/campagnes/{id}/statistiques` | `cotisation.lire` | Statistiques de recouvrement | RF-075 |
+| `GET` | `/v1/campagnes/{id}/echeancier` | `cotisation.lire` | Échéancier membres × périodes (écran A9) | RF-031 |
 | `GET` | `/v1/echeances` | `cotisation.lire` | Lister les échéances | RF-031, RF-035 |
 | `PATCH` | `/v1/echeances/{id}` | `cotisation.gerer` | Ajuster une échéance sans imputation | RF-031 |
 | `POST` | `/v1/echeances/{id}/exonerer` | `cotisation.exonerer` | Exonérer une échéance |  |

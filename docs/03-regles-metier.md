@@ -51,6 +51,14 @@ charges ; elles sont à confirmer avec les associations pilotes.
 | RG-MBR-006 | Une famille créée avec un chef y rattache ce chef (refus `AUTRE_FAMILLE` s'il appartient à une autre famille) ; le chef désigné ensuite doit déjà appartenir à la famille (`CHEF_HORS_FAMILLE`) ; le chef ne quitte pas sa famille sans successeur (`CHEF_DE_FAMILLE`). |
 | RG-MBR-009 | Effacés : nom (« Anonyme »), prénoms, sexe, date de naissance, téléphone, email, village, résidence, photo (objet supprimé), notes, famille, lien de compte ; ayants droit effacés et supprimés ; chef de famille retiré des familles concernées ; fiche `desactive`, `anonymise_at` posé. Conservés : numéro, pays, catégorie, statut d'adhésion, paiements, imputations, consentements. Refusée (`409`) si le membre a un accès app actif (le révoquer d'abord). **Écart à valider juridiquement** : le journal d'audit, immuable et chaîné, conserve les valeurs des événements antérieurs (création, modifications) ; l'historique exposé n'en reprend aucune. |
 
+### Précisions d'implémentation (sprint 3)
+
+| Règle | Implémentation |
+| --- | --- |
+| RG-MBR-005 | Job `membres.dormance` planifié à 02:00 GMT (file `maintenance`, une exécution par échéance même avec plusieurs workers) pour chaque association `active`, chacune dans sa transaction. |
+| RG-MBR-007 | Structure vérifiée à l'envoi (`422` : colonnes `nom` et `prenoms` obligatoires, colonne en double, fichier vide, plus de 5 000 lignes, ancien `.xls`) ; CSV UTF-8 ou Windows-1252, séparateur `;` `,` ou tabulation ; XLSX première feuille. En-têtes sans casse ni accents, alias courants (`prenom`, `tel`, `pays`…). Dates `JJ/MM/AAAA`, `AAAA-MM-JJ` ou série Excel ; téléphone numérique à 9 chiffres complété d'un 0. Catégorie = libellé exact d'une catégorie active ; famille = rattachement par nom, sinon créée à la confirmation (une seule fois). Doublon probable (RG-MBR-003) contre la base **et** entre lignes du fichier. Confirmation unique par analyse, avec attestation du consentement (canal `papier`) ; chaque membre est créé par le même service que la saisie manuelle (numéro, audit `membre.cree`) plus une trace `membres.importes`. |
+| RG-MBR-008 | Signature = HMAC-SHA256 tronqué à 128 bits (base64url) avec `QR_SIGNING_KEY` ; carte refusée (`409`) pour une fiche anonymisée ou désactivée. |
+
 ## 4. Cotisations et échéancier
 
 | ID | Règle |
@@ -71,6 +79,18 @@ charges ; elles sont à confirmer avec les associations pilotes.
 | RG-COT-040 | **Annulation** (permission `paiement.annuler`) : motif obligatoire, seulement si l'exercice est ouvert, une seule fois par paiement. Produit : une ligne `annulation` (nouveau numéro de reçu), les contre-imputations, un mouvement `sortie`, un SMS d'information au membre. Le paiement d'origine n'est jamais modifié. |
 | RG-COT-041 | **[D]** Un trésorier ne peut annuler que ses propres paiements de moins de 48 h ; au-delà ou pour un autre saisisseur, la permission `paiement.annuler_tout` (président) est requise. |
 | RG-COT-050 | Rappels automatiques (RF-036) : J-7, J-1 et J+7 de chaque échéance non soldée, si le membre a un canal de contact. Regroupement : **un seul message par membre et par jour**, listant les montants dus. Pas de rappel aux membres suspendus, désactivés ou ayant `canal_prefere = 'aucun'`. |
+
+### Précisions d'implémentation (sprint 3)
+
+| Règle | Implémentation |
+| --- | --- |
+| RG-COT-001 | Dates de la campagne comprises dans son exercice (`422 HORS_EXERCICE`), exercice ouvert (`422 EXERCICE_FERME`), y compris à l'activation, à l'ajout de membres et à la prolongation. |
+| RG-COT-010 | Ciblés : `etat = actif`, `statut_adhesion ∈ {actif, dormant}`, ni supprimés ni anonymisés, catégorie dans `categories_cibles` (vide = toutes). Aperçu (`GET /campagnes/{id}/apercu`) calculé avec la même requête. |
+| RG-COT-011 | Périodes **civiles** ; échéance au `jour_echeance` du premier mois de la période, ramenée dans `[date_debut, date_fin]` pour la première et la dernière période. Numéros à partir de `date_debut` : prolonger ou réduire `date_fin` conserve les numéros. 120 périodes au plus. Calcul partagé console/serveur (`genererPeriodes`, `packages/contracts`). |
+| RG-COT-012 | « Non encore échues » = échéance ≥ max(date d'adhésion, date d'ajout). Un membre déjà présent ne reçoit que ses périodes manquantes. Campagne brouillon ou clôturée → `409`. |
+| RG-COT-013 | Réduction refusée (`422 ECHEANCE_DEJA_IMPUTEE`) si une échéance supprimée est échue ou imputée. Changement de montant appliqué aux échéances futures, non exonérées, sans imputation **et non ajustées individuellement** (montant égal à l'ancien montant de la campagne). Ajustement individuel (`PATCH /echeances/{id}`) : campagne active, exercice ouvert, sans imputation, date dans l'exercice. |
+| RG-COT-022 | Avance = somme des imputations sans échéance d'un même paiement ; consommée de la plus ancienne à la plus récente, sur les échéances non soldées par date. Imputations du membre sérialisées par verrou transactionnel (`imputation:<membre>`), repris par les paiements (S4). |
+| RG-RAP-002 | Taux d'une campagne : `null` tant qu'aucune échéance n'est échue ; montant recouvré plafonné au dû par échéance. |
 
 ## 5. Numérotation
 

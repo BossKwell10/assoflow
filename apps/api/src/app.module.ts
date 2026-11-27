@@ -7,12 +7,22 @@ import { ProblemeFilter } from './common/probleme.filter.js';
 import { InfraModule } from './infra/infra.module.js';
 import { AssociationsModule } from './modules/associations/associations.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { CotisationsModule } from './modules/cotisations/cotisations.module.js';
 import { HealthController } from './modules/health/health.controller.js';
 import { MembresModule } from './modules/membres/membres.module.js';
+import { TachesModule } from './modules/taches/taches.module.js';
 import { UtilisateursModule } from './modules/utilisateurs/utilisateurs.module.js';
 
 @Module({
-  imports: [InfraModule, AuthModule, UtilisateursModule, AssociationsModule, MembresModule],
+  imports: [
+    InfraModule,
+    TachesModule,
+    AuthModule,
+    UtilisateursModule,
+    AssociationsModule,
+    MembresModule,
+    CotisationsModule,
+  ],
   controllers: [HealthController],
   providers: [
     { provide: APP_FILTER, useClass: ProblemeFilter },

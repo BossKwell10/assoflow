@@ -40,6 +40,18 @@ export class StockageS3 implements StockageObjets {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.options.bucket, Key: verifierCle(cle) }));
   }
 
+  async contenu(cle: string): Promise<Buffer | null> {
+    try {
+      const r = await this.client.send(
+        new GetObjectCommand({ Bucket: this.options.bucket, Key: verifierCle(cle) }),
+      );
+      return r.Body ? Buffer.from(await r.Body.transformToByteArray()) : null;
+    } catch (e) {
+      if ((e as { name?: string }).name === 'NoSuchKey') return null;
+      throw e;
+    }
+  }
+
   urlLecture(cle: string): Promise<string> {
     return getSignedUrl(
       this.client,
