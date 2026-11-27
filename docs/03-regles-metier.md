@@ -92,6 +92,25 @@ charges ; elles sont à confirmer avec les associations pilotes.
 | RG-COT-022 | Avance = somme des imputations sans échéance d'un même paiement ; consommée de la plus ancienne à la plus récente, sur les échéances non soldées par date. Imputations du membre sérialisées par verrou transactionnel (`imputation:<membre>`), repris par les paiements (S4). |
 | RG-RAP-002 | Taux d'une campagne : `null` tant qu'aucune échéance n'est échue ; montant recouvré plafonné au dû par échéance. |
 
+### Précisions d'implémentation (sprint 4)
+
+| Règle | Implémentation |
+| --- | --- |
+| RG-COT-020 | « Échues » = date d'échéance ≤ aujourd'hui (GMT). Ordre : campagne ciblée (toutes dates), puis échues, puis à venir, chaque groupe par date puis numéro de période. Échéances exonérées ignorées ; celles des campagnes clôturées restent dues. Ventilation pure (`ventiler`), sous le verrou `imputation:<membre>`. |
+| RG-COT-021 | Membres de la famille avec `etat = actif` ; à date égale, tri par numéro de membre. L'avance va au chef de famille s'il est actif, sinon au premier membre par numéro ; le reçu SMS part au chef de famille. Famille sans membre actif → `409 ETAT_INCOMPATIBLE`. |
+| RG-COT-022 | Les avances d'un paiement annulé ne sont plus imputées (déjà contre-passées). Filet de sécurité `avances.imputer` toutes les heures (minute 15). |
+| RG-COT-030 | Mode mobile money : `operateurMm` obligatoire, interdit pour les autres modes. Date du paiement : au plus 5 min dans le futur ; la date métier est la date GMT de `datePaiement`. |
+| RG-COT-031 | `confirmationMontantEleve: true` exigé au-delà de 500 000 FCFA (`422 CONFIRMATION_REQUISE`, champ `confirmationMontantEleve`). |
+| RG-COT-032 | Compte actif choisi par le saisisseur (la console propose le compte du type correspondant au mode). Mouvement `entree` daté de la date métier, libellé `Cotisation REC-… — <membre ou famille>`. Les écritures de `mouvements` passent toutes par `TresorerieService`. |
+| RG-COT-040 | Annulation datée du jour : exercice du paiement **et** exercice du jour ouverts (`EXERCICE_FERME`). Contre-imputations = net de chaque (échéance, membre) du paiement d'origine, rattachées à la ligne d'annulation. Mouvement `sortie` sur le compte d'origine, refusé si le solde ne la couvre pas (`SOLDE_INSUFFISANT`, RG-TRE-003). Déjà annulé ou ligne d'annulation → `409`. SMS `annulation_paiement` au membre (ou au chef de famille). |
+| RG-COT-041 | Fenêtre de 48 h mesurée sur `recu_serveur_at`. `annulable` (DTO) indique à la console si l'utilisateur courant peut annuler. |
+| RG-COT-050 | Job `rappels.generer` à 08:00 GMT : échéances non soldées à J-7, J-1 et J+7 (échéance dans 7 jours, demain, ou échue depuis 7 jours). Un message par membre et par jour (`cle_dedup = rappel:<membre>:<jour>`) : `rappel_retard` (total, date de la plus ancienne échéance en retard) s'il y a un retard, sinon `rappel_avant`. Relance manuelle (A10) : `rappel_retard` des seules échéances en retard sélectionnées, une par membre et par jour. |
+| RG-MBR-002 / RF-060 | Destinataire SMS d'un membre sans téléphone : le chef de sa famille (`relais_famille = true`). Fiches désactivées, anonymisées ou `canal_prefere = aucun` : aucun message (le reçu n'est pas envoyé, `recuSms = null`). |
+| RG-MBR-004 | Paiement refusé pour un membre désactivé (`409`, le réactiver d'abord) ; accepté pour un membre suspendu. |
+| RG-MBR-005 | Retour `dormant → actif` de chaque membre crédité par le paiement (direct ou groupé), dans sa transaction. |
+| RG-NUM-001 | `REC-AAAA-NNNNNN`, `AAAA` = année GMT de réception ; l'annulation consomme un numéro. Un paiement refusé ne consomme pas de numéro (même transaction). |
+| RG-NUM-002 | Le SMS de reçu porte `REC-… (prov. T02-…)` quand un numéro provisoire est fourni. |
+
 ## 5. Numérotation
 
 | ID | Règle |

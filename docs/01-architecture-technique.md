@@ -151,8 +151,13 @@ les variables `*_FILE` pointent vers ces fichiers.
 | `JWT_PRIVATE_KEY_FILE`, `JWT_PUBLIC_KEY_FILE` | clés Ed25519 (PEM PKCS#8 / SPKI) ; absentes hors production → paire éphémère | oui |
 | `FIELD_ENCRYPTION_KEY_FILE` | clé AES-256 (32 octets, base64) | oui |
 | `OTP_PEPPER_FILE` | | oui |
-| `SMS_PROVIDERS` | `agregateur_a,agregateur_b` (ordre de préférence ; `journal` en local et en test) | non |
-| `SMS_<FOURNISSEUR>_API_KEY_FILE` | | oui |
+| `SMS_PROVIDERS` | `agregateur_a,agregateur_b` (ordre de préférence) ; `simulateur`, `simulateur_b` en recette ; `journal` en local et en test | non |
+| `SMS_AGREGATEUR_A_URL`, `SMS_AGREGATEUR_B_URL` | point d'envoi HTTPS du fournisseur (obligatoire s'il figure dans `SMS_PROVIDERS`) | non |
+| `SMS_AGREGATEUR_A_TOKEN_FILE`, `SMS_AGREGATEUR_B_TOKEN_FILE` | jeton d'API du fournisseur | oui |
+| `SMS_AGREGATEUR_A_EXPEDITEUR`, `SMS_AGREGATEUR_B_EXPEDITEUR` | identifiant d'expéditeur (11 caractères, défaut `AssoFlow`) | non |
+| `SMS_AGREGATEUR_A_WEBHOOK_SECRET_FILE`, `SMS_AGREGATEUR_B_WEBHOOK_SECRET_FILE` | secret des accusés de remise (`X-Webhook-Token`) | oui |
+| `SMS_AGREGATEUR_A_PREFIXES`, `SMS_AGREGATEUR_B_PREFIXES` | préfixes E.164 servis, séparés par des virgules (vide = tous) | non |
+| `SMS_SIMULATEUR_WEBHOOK_SECRET_FILE`, `SMS_SIMULATEUR_PANNE` | simulateur : secret des accusés simulés ; panne simulée (`aucune`, `transitoire`, `definitive`) | oui / non |
 | `SENTRY_DSN_FILE` | DSN GlitchTip | oui |
 | `LOG_LEVEL` | `info` | non |
 | `MIN_APP_VERSION` | `1.0.0` | non |

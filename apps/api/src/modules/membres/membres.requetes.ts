@@ -200,7 +200,7 @@ export class MembresRequetes {
 
   /**
    * RF-026 : chronologie d'un membre, du plus récent au plus ancien. Sources : journal d'audit (création,
-   * modifications, changements d'état, ayants droit) et paiements (dès que le module existera, sprint 4).
+   * modifications, changements d'état, ayants droit) et paiements (directs, ou groupés de sa famille qui l'ont crédité).
    * Les libellés ne reprennent aucune donnée personnelle (fiches anonymisées comprises).
    */
   historique(id: string, limite: number, curseur?: string) {
@@ -227,7 +227,10 @@ export class MembresRequetes {
            UNION ALL
            SELECT p.date_paiement, 'p' || p.id::text, 'paiement.' || p.type, NULL, p.montant, p.numero_recu,
                   p.id::text
-             FROM paiements p WHERE p.membre_id = $1::uuid
+             FROM paiements p
+            WHERE p.membre_id = $1::uuid
+               OR (p.famille_id IS NOT NULL
+                   AND EXISTS (SELECT 1 FROM imputations_paiement i WHERE i.paiement_id = p.id AND i.membre_id = $1::uuid))
          )
          SELECT *, date::text AS date_texte FROM ev
           WHERE $2::timestamptz IS NULL OR (date, cle) < ($2::timestamptz, $3::text)

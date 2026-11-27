@@ -2624,6 +2624,47 @@ paths:
           $ref: '#/components/responses/Invalide'
         default:
           $ref: '#/components/responses/Erreur'
+  /echeances/relancer:
+    post:
+      tags:
+      - Cotisations
+      summary: Relancer les membres d'échéances en retard
+      operationId: post_echeances_relancer
+      description: 'Permission : `cotisation.gerer`. Écran A10 (action de masse « Relancer »). Un SMS `rappel_retard` par
+        membre (montants regroupés, RG-COT-050), au plus une relance manuelle par membre et par jour. Échéances non
+        soldées et échues uniquement ; membres suspendus, désactivés ou `canal_prefere = aucun` exclus. Soumis au quota
+        (docs/06 §4.3).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                echeanceIds:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - echeanceIds
+      responses:
+        '200':
+          description: Résultat de la diffusion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Diffusion'
+        '401':
+          $ref: '#/components/responses/NonAuthentifie'
+        '403':
+          $ref: '#/components/responses/Interdit'
+        '422':
+          $ref: '#/components/responses/Invalide'
+        default:
+          $ref: '#/components/responses/Erreur'
   /paiements:
     get:
       tags:
@@ -2705,7 +2746,12 @@ paths:
       summary: Enregistrer un paiement (mode connecté)
       operationId: post_paiements
       description: 'Permission : `paiement.enregistrer`. Exigences : RF-032, RF-033, RF-034, RF-038. Même traitement que le
-        push de sync : imputation, mouvement, numéro, SMS. Rejoué avec le même id → 200 et le paiement existant.'
+        push de sync : imputation (RG-COT-020, RG-COT-021), mouvement d''entrée (RG-COT-032), numéro de reçu (RG-NUM-001),
+        retour dormant → actif (RG-MBR-005), SMS de reçu mis en file après commit (RF-034). Rejoué avec le même id et
+        le même corps → 200 et le paiement existant ; corps différent → 409 CONFLIT_IDEMPOTENCE. Erreurs : 422
+        `CONFIRMATION_REQUISE` (montant > 500 000 sans `confirmationMontantEleve`), `EXERCICE_FERME`, `REFERENCE_INVALIDE`
+        (membre, famille, compte ou campagne), `VALIDATION` ; 409 `ETAT_INCOMPATIBLE` (membre désactivé ou anonymisé,
+        famille sans membre actif).'
       requestBody:
         required: true
         content:
@@ -2762,7 +2808,11 @@ paths:
       - Cotisations
       summary: Annuler un paiement (contre-écriture)
       operationId: post_paiements_id_annuler
-      description: 'Permission : `paiement.annuler`. RG-COT-040, RG-COT-041. Renvoie la ligne d''annulation.'
+      description: 'Permission : `paiement.annuler`. RG-COT-040, RG-COT-041. Renvoie la ligne d''annulation (nouveau numéro de
+        reçu, contre-imputations, mouvement de sortie daté du jour, SMS d''information). Sans `paiement.annuler_tout`,
+        seuls ses propres paiements de moins de 48 h (403 `PERMISSION_REFUSEE` sinon). 409 `ETAT_INCOMPATIBLE` si déjà
+        annulé ou si la ligne est elle-même une annulation ; 422 `EXERCICE_FERME` si l''exercice du paiement ou celui du
+        jour est clôturé ; 422 `SOLDE_INSUFFISANT` si le compte ne couvre pas la sortie (RG-TRE-003).'
       parameters:
       - name: id
         in: path
@@ -2829,7 +2879,10 @@ paths:
       - Cotisations
       summary: Renvoyer le reçu par SMS/WhatsApp
       operationId: post_paiements_id_renvoyer_recu
-      description: 'Permission : `paiement.enregistrer`. Exigences : RF-034.'
+      description: 'Permission : `paiement.enregistrer`. Exigences : RF-034. Nouvelle notification prioritaire (reçu ou
+        avis d''annulation selon la ligne), envoyée après commit ; jamais bloquée par le quota (docs/06 §4.3). `422
+        CONTACT_REQUIS` si ni le membre ni son chef de famille n''a de téléphone, ou si le membre refuse les messages
+        (`canal_prefere = aucun`).'
       parameters:
       - name: id
         in: path
@@ -2839,11 +2892,11 @@ paths:
           format: uuid
       responses:
         '202':
-          description: Tâche créée
+          description: Notification mise en file
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tache'
+                $ref: '#/components/schemas/Notification'
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
@@ -3952,7 +4005,8 @@ paths:
       - Réunions
       summary: Lister les réunions
       operationId: get_reunions
-      description: 'Permission : `association.lire`. Exigences : RF-080.'
+      description: 'Permission : `association.lire`. Exigences : RF-080. Sprint 4 : liste minimale pour les convocations
+        (E6-08), plus récentes d''abord, sans les réunions supprimées.'
       parameters:
       - $ref: '#/components/parameters/Limite'
       - $ref: '#/components/parameters/Curseur'
@@ -3974,7 +4028,8 @@ paths:
       - Réunions
       summary: Planifier une réunion
       operationId: post_reunions
-      description: 'Permission : `reunion.gerer`. Exigences : RF-080.'
+      description: 'Permission : `reunion.gerer`. Exigences : RF-080. Sprint 4 : planification simple (type, titre, début,
+        lieu, ordre du jour) pour la convocation d''AG par SMS (E6-08) ; présences et PV en phase 2.'
       requestBody:
         required: true
         content:
@@ -4039,7 +4094,11 @@ paths:
       - Réunions
       summary: Envoyer les convocations
       operationId: post_reunions_id_convoquer
-      description: 'Permission : `reunion.gerer`. Exigences : RF-063, RF-065.'
+      description: 'Permission : `reunion.gerer`. Exigences : RF-063, RF-065. Sprint 4 (E6-08) : canal `sms` seulement,
+        modèle `convocation`, une convocation par membre et par réunion (un nouvel appel ne renvoie qu''aux membres pas
+        encore convoqués). Membres actifs (`etat = actif`), relais par le chef de famille pour les membres sans
+        téléphone (RF-060), `canal_prefere = aucun` exclu. Soumis au quota (docs/06 §4.3). Réunion annulée ou passée →
+        409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -4077,13 +4136,15 @@ paths:
                       items:
                         type: string
                         format: uuid
+              required:
+              - cible
       responses:
-        '202':
-          description: Tâche créée
+        '200':
+          description: Résultat de la diffusion
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tache'
+                $ref: '#/components/schemas/Diffusion'
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
@@ -4253,7 +4314,8 @@ paths:
       - Communication
       summary: Modèles de messages
       operationId: get_modeles_notification
-      description: 'Permission : `communication.modeles`. Exigences : RF-ADM-023.'
+      description: 'Permission : `communication.modeles`. Exigences : RF-ADM-023. Modèles globaux (docs/06 §5) fusionnés
+        avec les textes personnalisés de l''association (`personnalise = true`).'
       responses:
         '200':
           description: Succès
@@ -4275,7 +4337,9 @@ paths:
       - Communication
       summary: Personnaliser un modèle
       operationId: put_modeles_notification_code_canal
-      description: 'Permission : `communication.modeles`.'
+      description: 'Permission : `communication.modeles`. Seul le texte est personnalisable (RF-SUP-042) : une variable
+        `{{…}}` absente de la liste du modèle → 422 `VALIDATION` (`VARIABLE_INCONNUE`). 404 si le code ou le canal
+        n''existe pas en global.'
       parameters:
       - name: code
         in: path
@@ -4344,7 +4408,8 @@ paths:
       - Communication
       summary: Historique des envois
       operationId: get_notifications
-      description: 'Permission : `communication.annoncer`.'
+      description: 'Permission : `communication.annoncer`. Historique des envois (A22), plus récents d''abord ; filtre
+        `modele` sur le code de modèle. Destinataires masqués (docs/04 §6).'
       parameters:
       - name: membreId
         in: query
@@ -4357,7 +4422,24 @@ paths:
         required: false
         schema:
           type: string
+          enum:
+          - en_attente
+          - envoyee
+          - remise
+          - echec
+          - annulee
+          - hors_quota
       - name: canal
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - sms
+          - whatsapp
+          - push
+          - email
+      - name: modele
         in: query
         required: false
         schema:
@@ -4383,7 +4465,8 @@ paths:
       - Communication
       summary: Consommation SMS du mois
       operationId: get_sms_consommation
-      description: 'Permission : `association.lire`. Exigences : RF-SUP-031.'
+      description: 'Permission : `association.lire`. Exigences : RF-SUP-031. Mois civil en cours (GMT) ; OTP et reçus
+        comptés mais jamais bloqués (docs/06 §4.3).'
       responses:
         '200':
           description: Succès
@@ -4463,7 +4546,11 @@ paths:
       - Rapports
       summary: Demander un rapport ou un export
       operationId: post_rapports
-      description: 'Permission : `rapport.exporter`. Exigences : RF-039, RF-071, RF-072, RF-073, RF-ADM-042.'
+      description: 'Permission : `rapport.exporter`. Exigences : RF-039, RF-071, RF-072, RF-073, RF-ADM-042. Sprint 4 :
+        `export_cotisants` (format `xlsx`, paramètres `campagneId` ou `exerciceId`, sinon toutes les échéances) ; les
+        autres types répondent 422 `VALIDATION` (`NON_DISPONIBLE`) jusqu''aux sprints suivants. Une fois la tâche
+        `terminee`, `resultat.url` (lecture présignée de 5 min) et `resultat.nomFichier` sont fournis par `GET
+        /taches/{id}`.'
       requestBody:
         required: true
         content:
@@ -4543,6 +4630,8 @@ paths:
       - Rapports
       summary: État d'une tâche
       operationId: get_taches_id
+      description: 'Tâche du demandeur. Une tâche terminée qui produit un fichier expose `resultat.url` (URL de lecture
+        valable 5 min, recalculée à chaque appel) et `resultat.nomFichier`.'
       parameters:
       - name: id
         in: path
@@ -5104,7 +5193,10 @@ paths:
       - Public
       summary: Accusé de remise SMS
       operationId: post_webhooks_sms_fournisseur
-      description: Authentifié par signature ou jeton propre au fournisseur.
+      description: 'Authentifié par signature ou jeton propre au fournisseur (en-tête `X-Webhook-Token` comparé au secret
+        `SMS_<FOURNISSEUR>_WEBHOOK_SECRET`). Met à jour `statut = remise` (et `remise_at`) ou `echec` de la notification
+        correspondant à l''identifiant du fournisseur. Accusé inconnu → 204 (pas de rejeu par le fournisseur) ;
+        fournisseur inconnu ou jeton invalide → 404.'
       parameters:
       - name: fournisseur
         in: path
@@ -7842,9 +7934,58 @@ components:
           type:
           - string
           - 'null'
+        campagneId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        campagneLibelle:
+          type:
+          - string
+          - 'null'
+        dateEcheance:
+          type:
+          - string
+          - 'null'
+          format: date
         montant:
           type: integer
           format: int64
+          description: Net imputé par ce paiement (avance si `echeanceId` est nul ; négatif sur une annulation)
+      required:
+      - echeanceId
+      - membreId
+      - libellePeriode
+      - campagneId
+      - campagneLibelle
+      - dateEcheance
+      - montant
+    RecuSms:
+      type: object
+      description: Notification du reçu (RF-034), suivie dans l'outbox (docs/06 §1)
+      properties:
+        notificationId:
+          type: string
+          format: uuid
+        statut:
+          type: string
+          enum:
+          - en_attente
+          - envoyee
+          - remise
+          - echec
+          - annulee
+          - hors_quota
+        destinataireMasque:
+          type: string
+        relaisFamille:
+          type: boolean
+          description: Envoyé au chef de famille (membre sans téléphone, RF-060)
+      required:
+      - notificationId
+      - statut
+      - destinataireMasque
+      - relaisFamille
     Paiement:
       type: object
       properties:
@@ -7946,12 +8087,90 @@ components:
           type:
           - string
           - 'null'
+        membreNumero:
+          type:
+          - string
+          - 'null'
+          readOnly: true
+        membreNom:
+          type:
+          - string
+          - 'null'
+          readOnly: true
+        familleNom:
+          type:
+          - string
+          - 'null'
+          readOnly: true
+        compteLibelle:
+          type: string
+          readOnly: true
+        exerciceId:
+          type: string
+          format: uuid
+          readOnly: true
+        annulation:
+          type:
+          - object
+          - 'null'
+          readOnly: true
+          description: Ligne d'annulation de ce paiement (RG-COT-040), s'il a été annulé
+          properties:
+            id:
+              type: string
+              format: uuid
+            numeroRecu:
+              type: string
+            motif:
+              type: string
+            datePaiement:
+              type: string
+              format: date-time
+            saisiPar:
+              type: string
+          required:
+          - id
+          - numeroRecu
+          - motif
+          - datePaiement
+          - saisiPar
+        annulable:
+          type: boolean
+          readOnly: true
+          description: L'utilisateur courant peut annuler ce paiement (RG-COT-040, RG-COT-041)
+        recuSms:
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/RecuSms'
+          - type: 'null'
       required:
       - id
+      - type
+      - annulePaiementId
+      - numeroRecu
+      - numeroRecuProvisoire
+      - membreId
+      - familleId
+      - campagneId
       - montant
       - mode
+      - operateurMm
+      - referenceExterne
       - compteId
       - datePaiement
+      - recuServeurAt
+      - saisiPar
+      - annule
+      - imputations
+      - motif
+      - membreNumero
+      - membreNom
+      - familleNom
+      - compteLibelle
+      - exerciceId
+      - annulation
+      - annulable
+      - recuSms
     PaiementCreation:
       type: object
       properties:
@@ -8562,6 +8781,17 @@ components:
         personnalise:
           type: boolean
           readOnly: true
+        libelle:
+          type: string
+          readOnly: true
+        contenuGlobal:
+          type: string
+          readOnly: true
+          description: Texte du modèle global (rétabli par `DELETE`)
+        unites:
+          type: integer
+          readOnly: true
+          description: Unités SMS du texte brut (GSM-7 160/153, Unicode 70/67, docs/06 §4.3)
       required:
       - contenu
     Notification:
@@ -8599,6 +8829,87 @@ components:
           - string
           - 'null'
           format: date-time
+        membreId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        membreNom:
+          type:
+          - string
+          - 'null'
+        relaisFamille:
+          type: boolean
+          description: Envoyé au chef de famille d'un membre sans téléphone (RF-060)
+        priorite:
+          type: integer
+          description: 1 = reçu, OTP, décision ; 5 = rappel, convocation ; 9 = annonce
+        origineType:
+          type:
+          - string
+          - 'null'
+        origineId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        contenu:
+          type: string
+        tentatives:
+          type: integer
+        derniereErreur:
+          type:
+          - string
+          - 'null'
+        envoyeeAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - id
+      - canal
+      - modeleCode
+      - destinataireMasque
+      - statut
+      - fournisseur
+      - unites
+      - createdAt
+      - remiseAt
+      - membreId
+      - membreNom
+      - relaisFamille
+      - priorite
+      - origineType
+      - origineId
+      - contenu
+      - tentatives
+      - derniereErreur
+      - envoyeeAt
+    Diffusion:
+      type: object
+      description: Résultat d'un envoi groupé (relance, convocation) ; les SMS partent après commit
+      properties:
+        notifications:
+          type: integer
+          description: Notifications créées (mises en file)
+        dejaEnvoyees:
+          type: integer
+          description: Membres déjà notifiés pour cet objet (dédoublonnage)
+        sansContact:
+          type: integer
+          description: Membres sans téléphone joignable ni chef de famille joignable, ou `canal_prefere = aucun`
+        unitesEstimees:
+          type: integer
+        quotaRestant:
+          type: integer
+          description: Unités restantes du mois avant cet envoi (négatif = dépassement)
+      required:
+      - notifications
+      - dejaEnvoyees
+      - sansContact
+      - unitesEstimees
+      - quotaRestant
     ConsommationSms:
       type: object
       properties:
@@ -8609,10 +8920,22 @@ components:
           type: integer
         unites:
           type: integer
+        pourcentage:
+          type: integer
+        horsQuota:
+          type: integer
+          description: Messages non envoyés ce mois-ci faute de quota
         parModele:
           type: object
           additionalProperties:
             type: integer
+      required:
+      - mois
+      - quota
+      - unites
+      - pourcentage
+      - horsQuota
+      - parModele
     TableauDeBord:
       type: object
       properties:

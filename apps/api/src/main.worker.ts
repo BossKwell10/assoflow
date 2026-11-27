@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 
-// Worker : consommera les files BullMQ (docs/06-jobs-notifications.md). Socle uniquement au sprint 0.
+// Worker : consomme les files BullMQ et pose les planifications (docs/06-jobs-notifications.md, FilesService).
 const app = await NestFactory.createApplicationContext(AppModule);
 app.enableShutdownHooks();
-new Logger('Worker').log('Worker démarré (aucune file enregistrée pour le moment)');
+new Logger('Worker').log('Worker démarré');

@@ -23,8 +23,25 @@ const schema = z.object({
     .optional(),
   /** Poivre des HMAC d'OTP et de codes de secours (au moins 16 caractères). */
   OTP_PEPPER: z.string().min(16).optional(),
-  /** Fournisseurs SMS par ordre de préférence. Sprint 1 : `journal` uniquement (docs/06 §4.1). */
+  /**
+   * Fournisseurs SMS par ordre de préférence (docs/06 §4.1) : `agregateur_a`, `agregateur_b` (HTTP),
+   * `simulateur`, `simulateur_b` (recette, sans envoi réel), `journal` (logs, développement et tests).
+   */
   SMS_PROVIDERS: z.string().default('journal'),
+  SMS_AGREGATEUR_A_URL: z.url().optional(),
+  SMS_AGREGATEUR_A_TOKEN: z.string().min(1).optional(),
+  SMS_AGREGATEUR_A_EXPEDITEUR: z.string().min(1).max(11).default('AssoFlow'),
+  SMS_AGREGATEUR_A_WEBHOOK_SECRET: z.string().min(16).optional(),
+  /** Préfixes E.164 servis, séparés par des virgules (vide = tous). */
+  SMS_AGREGATEUR_A_PREFIXES: z.string().optional(),
+  SMS_AGREGATEUR_B_URL: z.url().optional(),
+  SMS_AGREGATEUR_B_TOKEN: z.string().min(1).optional(),
+  SMS_AGREGATEUR_B_EXPEDITEUR: z.string().min(1).max(11).default('AssoFlow'),
+  SMS_AGREGATEUR_B_WEBHOOK_SECRET: z.string().min(16).optional(),
+  SMS_AGREGATEUR_B_PREFIXES: z.string().optional(),
+  /** Simulateur : secret des accusés de remise simulés et panne simulée (`transitoire`, `definitive`). */
+  SMS_SIMULATEUR_WEBHOOK_SECRET: z.string().min(16).optional(),
+  SMS_SIMULATEUR_PANNE: z.enum(['aucune', 'transitoire', 'definitive']).default('aucune'),
   /** Stockage objet S3 compatible (docs/01 §6). Sans `S3_BUCKET` : stockage local sur disque (hors production). */
   S3_ENDPOINT: z.url().optional(),
   S3_REGION: z.string().min(1).default('ci-abj'),
@@ -87,6 +104,19 @@ export function chargerConfig(env: NodeJS.ProcessEnv = process.env): Config {
       throw new Error(`Configuration invalide — ${manquantes.join(', ')} obligatoire(s) en production`);
     }
   }
+  const fournisseurs = config.SMS_PROVIDERS.split(',').map((c) => c.trim());
+  for (const code of fournisseurs) {
+    if (!CODES_SMS.includes(code as (typeof CODES_SMS)[number])) {
+      throw new Error(`Configuration invalide — fournisseur SMS inconnu : ${code}`);
+    }
+    const prefixe =
+      code === 'agregateur_a' ? 'SMS_AGREGATEUR_A' : code === 'agregateur_b' ? 'SMS_AGREGATEUR_B' : null;
+    if (prefixe && (!config[`${prefixe}_URL`] || !config[`${prefixe}_TOKEN`])) {
+      throw new Error(
+        `Configuration invalide — ${prefixe}_URL et ${prefixe}_TOKEN obligatoires pour ${code}`,
+      );
+    }
+  }
   if (Boolean(config.JWT_PRIVATE_KEY) !== Boolean(config.JWT_PUBLIC_KEY)) {
     throw new Error('Configuration invalide — JWT_PRIVATE_KEY et JWT_PUBLIC_KEY vont de pair');
   }
@@ -98,3 +128,6 @@ export function chargerConfig(env: NodeJS.ProcessEnv = process.env): Config {
 }
 
 export const CONFIG = Symbol('CONFIG');
+
+/** Codes de fournisseurs SMS reconnus dans `SMS_PROVIDERS`. */
+export const CODES_SMS = ['agregateur_a', 'agregateur_b', 'simulateur', 'simulateur_b', 'journal'] as const;

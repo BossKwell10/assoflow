@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
-import { masquerTelephone } from '@assoflow/contracts';
+import { masquerTelephone, unitesSms } from '@assoflow/contracts';
 import { randomUUID } from 'node:crypto';
-import type { FournisseurSms, MessageSms } from './fournisseur-sms.js';
+import type { FournisseurSms, MessageSms, ResultatEnvoiSms } from './fournisseur-sms.js';
 
 /** Masque toute suite de 4 chiffres ou plus (codes OTP, numéros) dans un texte destiné aux logs. */
 export function masquerTexte(texte: string): string {
@@ -10,34 +10,46 @@ export function masquerTexte(texte: string): string {
 
 /**
  * Fournisseur « journal » (développement, test) : n'envoie rien, écrit le message masqué dans les logs.
- * En NODE_ENV=test uniquement, garde le dernier message par numéro en mémoire pour les tests.
- * Le vrai fournisseur et l'outbox arrivent au sprint 4 (E6-01, E6-02).
+ * En NODE_ENV=test uniquement, garde les messages par numéro en mémoire pour les tests.
  */
 export class JournalSms implements FournisseurSms {
-  readonly code = 'journal';
-  private readonly logger = new Logger('SMS');
-  private readonly derniers = new Map<string, string>();
+  readonly code: string = 'journal';
+  readonly accusesRemise: boolean = false;
+  protected readonly logger = new Logger('SMS');
+  private readonly messages = new Map<string, string[]>();
 
-  constructor(private readonly modeTest: boolean) {}
+  constructor(protected readonly modeTest: boolean) {}
 
-  async envoyer(msg: MessageSms) {
+  async envoyer(msg: MessageSms): Promise<ResultatEnvoiSms> {
     this.logger.log(`SMS ${msg.ref} → ${masquerTelephone(msg.to)} : ${masquerTexte(msg.texte)}`);
-    if (this.modeTest) this.derniers.set(msg.to, msg.texte);
-    return { idFournisseur: randomUUID(), unites: Math.max(1, Math.ceil(msg.texte.length / 160)) };
+    this.memoriser(msg);
+    return { idFournisseur: randomUUID(), unites: unitesSms(msg.texte) };
   }
 
-  traiterAccuse(): null {
+  protected memoriser(msg: MessageSms): void {
+    if (this.modeTest) this.messages.set(msg.to, [...(this.messages.get(msg.to) ?? []), msg.texte]);
+  }
+
+  traiterAccuse(
+    _payload?: unknown,
+    _entetes?: Record<string, string | undefined>,
+  ): ReturnType<FournisseurSms['traiterAccuse']> {
     return null;
   }
 
-  prendEnCharge(): boolean {
+  prendEnCharge(_telephone?: string): boolean {
     return true;
+  }
+
+  /** Messages envoyés à ce numéro, du plus ancien au plus récent (NODE_ENV=test uniquement). */
+  messagesPour(telephone: string): string[] {
+    if (!this.modeTest) throw new Error('Disponible en NODE_ENV=test uniquement');
+    return this.messages.get(telephone) ?? [];
   }
 
   /** Dernier message envoyé à ce numéro (NODE_ENV=test uniquement). */
   dernierMessage(telephone: string): string | undefined {
-    if (!this.modeTest) throw new Error('Disponible en NODE_ENV=test uniquement');
-    return this.derniers.get(telephone);
+    return this.messagesPour(telephone).at(-1);
   }
 
   /** Dernier code à 6 chiffres envoyé à ce numéro (NODE_ENV=test uniquement). */
