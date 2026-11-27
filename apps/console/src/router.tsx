@@ -6,12 +6,14 @@ import {
   createRouter,
   lazyRouteComponent,
   Outlet,
+  redirect,
   type RouteComponent,
 } from '@tanstack/react-router';
 import { ExigerPermission } from './auth/AccesRefuse';
 import { ExigerEspaceAssociation, ExigerSession } from './auth/Gardes';
 import { t } from './i18n';
 import { Coquille } from './layout/Coquille';
+import { validerRechercheCampagnes, validerRechercheEcheances } from './features/cotisations/recherche';
 import { validerRechercheFamilles, validerRechercheMembres } from './features/membres/recherche';
 import { APlusTard } from './routes/APlusTard';
 
@@ -99,7 +101,6 @@ const espace = createRoute({
 });
 
 const ecrans: { path: string; titre: string; sprint: string; permission: Permission | Permission[] }[] = [
-  { path: '/cotisations', titre: t('menu.cotisations'), sprint: 'sprint 3', permission: 'cotisation.lire' },
   {
     path: '/tresorerie',
     titre: t('menu.tresorerie'),
@@ -135,6 +136,33 @@ const familles = createRoute({
   ),
 });
 
+// --- Cotisations (A8 à A10, sprint 3)
+const cotisations = createRoute({
+  getParentRoute: () => espace,
+  path: '/cotisations',
+  beforeLoad: () => {
+    throw redirect({ to: '/cotisations/campagnes' });
+  },
+});
+const campagnes = createRoute({
+  getParentRoute: () => espace,
+  path: '/cotisations/campagnes',
+  validateSearch: validerRechercheCampagnes,
+  component: protege(
+    'cotisation.lire',
+    lazyRouteComponent(() => import('./features/cotisations/ListeCampagnes'), 'ListeCampagnes'),
+  ),
+});
+const echeances = createRoute({
+  getParentRoute: () => espace,
+  path: '/cotisations/echeances',
+  validateSearch: validerRechercheEcheances,
+  component: protege(
+    'cotisation.lire',
+    lazyRouteComponent(() => import('./features/cotisations/Echeances'), 'Echeances'),
+  ),
+});
+
 export const routeTree = racine.addChildren([
   connexion,
   motDePasseOublie,
@@ -160,6 +188,29 @@ export const routeTree = racine.addChildren([
       '/membres/doublons',
       'membre.lire',
       lazyRouteComponent(() => import('./features/membres/Doublons'), 'Doublons'),
+    ),
+    ecran(
+      '/membres/import',
+      'membre.importer',
+      lazyRouteComponent(() => import('./features/membres/ImportMembres'), 'ImportMembres'),
+    ),
+    cotisations,
+    campagnes,
+    echeances,
+    ecran(
+      '/cotisations/campagnes/nouvelle',
+      'cotisation.gerer',
+      lazyRouteComponent(() => import('./features/cotisations/FormulaireCampagne'), 'NouvelleCampagne'),
+    ),
+    ecran(
+      '/cotisations/campagnes/$id',
+      'cotisation.lire',
+      lazyRouteComponent(() => import('./features/cotisations/DetailCampagne'), 'DetailCampagne'),
+    ),
+    ecran(
+      '/cotisations/campagnes/$id/modifier',
+      'cotisation.gerer',
+      lazyRouteComponent(() => import('./features/cotisations/FormulaireCampagne'), 'ModificationCampagne'),
     ),
     ecran(
       '/membres/nouveau',

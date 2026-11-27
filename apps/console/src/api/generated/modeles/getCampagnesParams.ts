@@ -6,12 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CurseurParameter } from './curseurParameter';
+import type { GetCampagnesStatut } from './getCampagnesStatut';
+import type { GetCampagnesType } from './getCampagnesType';
 import type { LimiteParameter } from './limiteParameter';
 
 export type GetCampagnesParams = {
   exerciceId?: string;
-  statut?: string;
-  type?: string;
+  statut?: GetCampagnesStatut;
+  type?: GetCampagnesType;
   /**
    * @minimum 1
    * @maximum 200

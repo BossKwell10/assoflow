@@ -1301,8 +1301,6 @@ paths:
           $ref: '#/components/responses/Conflit'
         '422':
           $ref: '#/components/responses/Invalide'
-        '422':
-          $ref: '#/components/responses/Invalide'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/doublon:

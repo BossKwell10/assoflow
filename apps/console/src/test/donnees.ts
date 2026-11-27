@@ -221,3 +221,12 @@ export const ASSOCIATION: Association = {
   plan: 'gratuit',
   quotaSmsMensuel: 500,
 };
+
+export function session_tresorier(): Session {
+  return session(
+    utilisateur({
+      role: { code: 'tresorier', libelle: 'Trésorier' },
+      permissions: ROLES_SYSTEME.tresorier.permissions,
+    }),
+  );
+}

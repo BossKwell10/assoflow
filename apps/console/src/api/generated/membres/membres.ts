@@ -438,6 +438,119 @@ export function useGetMembresDoublons<TData = Awaited<ReturnType<typeof getMembr
 
 
 
+export const getGetMembresImportModeleUrl = () => {
+
+
+
+
+  return `/membres/import/modele`
+}
+
+/**
+ * Permission : `membre.importer`. Exigences : RF-024. Colonnes de RG-MBR-007, une ligne d'exemple et une feuille d'aide.
+ * @summary Modèle Excel de l'import
+ */
+export const getMembresImportModele = async ( options?: Parameters<typeof clientApi>[1]): Promise<Blob> => {
+
+  return clientApi<Blob>(getGetMembresImportModeleUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMembresImportModeleQueryKey = () => {
+    return [
+    `/membres/import/modele`
+    ] as const;
+    }
+
+
+export const getGetMembresImportModeleQueryOptions = <TData = Awaited<ReturnType<typeof getMembresImportModele>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportModele>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMembresImportModeleQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMembresImportModele>>> = ({ signal }) => getMembresImportModele({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMembresImportModele>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMembresImportModeleQueryResult = NonNullable<Awaited<ReturnType<typeof getMembresImportModele>>>
+export type GetMembresImportModeleQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>
+
+
+/**
+ * Permission : `membre.importer`. Exigences : RF-024. Colonnes de RG-MBR-007, une ligne d'exemple et une feuille d'aide.
+ * @summary Modèle Excel de l'import
+ */
+export function useGetMembresImportModele<TData = Awaited<ReturnType<typeof getMembresImportModele>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportModele>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMembresImportModele>>,
+          TError,
+          Awaited<ReturnType<typeof getMembresImportModele>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `membre.importer`. Exigences : RF-024. Colonnes de RG-MBR-007, une ligne d'exemple et une feuille d'aide.
+ * @summary Modèle Excel de l'import
+ */
+export function useGetMembresImportModele<TData = Awaited<ReturnType<typeof getMembresImportModele>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportModele>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMembresImportModele>>,
+          TError,
+          Awaited<ReturnType<typeof getMembresImportModele>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `membre.importer`. Exigences : RF-024. Colonnes de RG-MBR-007, une ligne d'exemple et une feuille d'aide.
+ * @summary Modèle Excel de l'import
+ */
+export function useGetMembresImportModele<TData = Awaited<ReturnType<typeof getMembresImportModele>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportModele>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `membre.importer`. Exigences : RF-024. Colonnes de RG-MBR-007, une ligne d'exemple et une feuille d'aide.
+ * @summary Modèle Excel de l'import
+ */
+export function useGetMembresImportModele<TData = Awaited<ReturnType<typeof getMembresImportModele>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportModele>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMembresImportModeleQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 export const getPostMembresImportUrl = () => {
 
 
@@ -447,7 +560,7 @@ export const getPostMembresImportUrl = () => {
 }
 
 /**
- * Permission : `membre.importer`. Exigences : RF-024.
+ * Permission : `membre.importer`. Exigences : RF-024, RG-MBR-007. Structure vérifiée immédiatement (`422` : `COLONNE_MANQUANTE`, `COLONNE_EN_DOUBLE`, `FICHIER_VIDE`, `TROP_DE_LIGNES`, `TYPE_FICHIER_INVALIDE`, `FICHIER_ILLISIBLE`) ; analyse ligne par ligne dans la tâche `import_membres_analyse`. 2 Mo, 5 000 lignes au plus.
  * @summary Analyser un fichier d'import (CSV/XLSX)
  */
 export const postMembresImport = async (postMembresImportBody: PostMembresImportBody, options?: Parameters<typeof clientApi>[1]): Promise<Tache> => {
@@ -502,7 +615,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostMembresImportMutationVariables = {data: PostMembresImportBody}
 
     /**
- * Permission : `membre.importer`. Exigences : RF-024.
+ * Permission : `membre.importer`. Exigences : RF-024, RG-MBR-007. Structure vérifiée immédiatement (`422` : `COLONNE_MANQUANTE`, `COLONNE_EN_DOUBLE`, `FICHIER_VIDE`, `TROP_DE_LIGNES`, `TYPE_FICHIER_INVALIDE`, `FICHIER_ILLISIBLE`) ; analyse ligne par ligne dans la tâche `import_membres_analyse`. 2 Mo, 5 000 lignes au plus.
  * @summary Analyser un fichier d'import (CSV/XLSX)
  */
 export const usePostMembresImport = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -524,7 +637,7 @@ export const usePostMembresImport = <TError = ErrorType<NonAuthentifieResponse |
 }
 
 /**
- * Permission : `membre.importer`.
+ * Permission : `membre.importer`. Tâche du demandeur seulement. `409` tant que l'analyse n'est pas terminée.
  * @summary Rapport d'analyse d'import
  */
 export const getMembresImportTacheId = async (tacheId: string, options?: Parameters<typeof clientApi>[1]): Promise<RapportImport> => {
@@ -549,7 +662,7 @@ export const getGetMembresImportTacheIdQueryKey = (tacheId: string,) => {
     }
 
 
-export const getGetMembresImportTacheIdQueryOptions = <TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(tacheId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportTacheId>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+export const getGetMembresImportTacheIdQueryOptions = <TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(tacheId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportTacheId>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -568,14 +681,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMembresImportTacheIdQueryResult = NonNullable<Awaited<ReturnType<typeof getMembresImportTacheId>>>
-export type GetMembresImportTacheIdQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>
+export type GetMembresImportTacheIdQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>
 
 
 /**
- * Permission : `membre.importer`.
+ * Permission : `membre.importer`. Tâche du demandeur seulement. `409` tant que l'analyse n'est pas terminée.
  * @summary Rapport d'analyse d'import
  */
-export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(
  tacheId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportTacheId>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMembresImportTacheId>>,
@@ -586,10 +699,10 @@ export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof get
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `membre.importer`.
+ * Permission : `membre.importer`. Tâche du demandeur seulement. `409` tant que l'analyse n'est pas terminée.
  * @summary Rapport d'analyse d'import
  */
-export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(
  tacheId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportTacheId>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMembresImportTacheId>>,
@@ -600,18 +713,18 @@ export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof get
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `membre.importer`.
+ * Permission : `membre.importer`. Tâche du demandeur seulement. `409` tant que l'analyse n'est pas terminée.
  * @summary Rapport d'analyse d'import
  */
-export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(
  tacheId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportTacheId>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `membre.importer`.
+ * Permission : `membre.importer`. Tâche du demandeur seulement. `409` tant que l'analyse n'est pas terminée.
  * @summary Rapport d'analyse d'import
  */
-export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+export function useGetMembresImportTacheId<TData = Awaited<ReturnType<typeof getMembresImportTacheId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(
  tacheId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresImportTacheId>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -637,7 +750,7 @@ export const getPostMembresImportTacheIdConfirmerUrl = (tacheId: string,) => {
 }
 
 /**
- * Permission : `membre.importer`. Exigences : RF-024.
+ * Permission : `membre.importer`. Exigences : RF-024, RF-SUP-054. Une seule confirmation par analyse (`409` ensuite, ou si l'analyse n'est pas terminée). Le bureau atteste le consentement des membres importés (enregistré avec le canal `papier`). Doublons inclus sur demande, marqués « à vérifier ». Création dans la tâche `import_membres_confirmer` ; résultat : `creees`, `doublonsCrees`, `ignorees`, `erreurs`, `famillesCreees`, `details[]`.
  * @summary Confirmer l'import analysé
  */
 export const postMembresImportTacheIdConfirmer = async (tacheId: string,
@@ -658,7 +771,7 @@ export const postMembresImportTacheIdConfirmer = async (tacheId: string,
 
 export const getPostMembresImportTacheIdConfirmerMutationKey = () => ['postMembresImportTacheIdConfirmer'] as const;
 
-export const getPostMembresImportTacheIdConfirmerMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostMembresImportTacheIdConfirmerMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresImportTacheIdConfirmer>>, TError,PostMembresImportTacheIdConfirmerMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembresImportTacheIdConfirmer>>, TError,PostMembresImportTacheIdConfirmerMutationVariables, TContext> => {
 
@@ -687,14 +800,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostMembresImportTacheIdConfirmerMutationResult = NonNullable<Awaited<ReturnType<typeof postMembresImportTacheIdConfirmer>>>
     export type PostMembresImportTacheIdConfirmerMutationBody = PostMembresImportTacheIdConfirmerBody
-    export type PostMembresImportTacheIdConfirmerMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostMembresImportTacheIdConfirmerMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostMembresImportTacheIdConfirmerMutationVariables = {tacheId: string;data: PostMembresImportTacheIdConfirmerBody}
 
     /**
- * Permission : `membre.importer`. Exigences : RF-024.
+ * Permission : `membre.importer`. Exigences : RF-024, RF-SUP-054. Une seule confirmation par analyse (`409` ensuite, ou si l'analyse n'est pas terminée). Le bureau atteste le consentement des membres importés (enregistré avec le canal `papier`). Doublons inclus sur demande, marqués « à vérifier ». Création dans la tâche `import_membres_confirmer` ; résultat : `creees`, `doublonsCrees`, `ignorees`, `erreurs`, `famillesCreees`, `details[]`.
  * @summary Confirmer l'import analysé
  */
-export const usePostMembresImportTacheIdConfirmer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostMembresImportTacheIdConfirmer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembresImportTacheIdConfirmer>>, TError,PostMembresImportTacheIdConfirmerMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembresImportTacheIdConfirmer>>,
@@ -1675,7 +1788,7 @@ export const getGetMembresIdCarteUrl = (id: string,) => {
 }
 
 /**
- * Permission : `membre.lire`. Exigences : RF-023.
+ * Permission : `membre.lire`. Exigences : RF-023, RG-MBR-008. PDF au format ID-1 ; QR = `assoflow:m:<association_id>:<membre_id>:<signature HMAC>`, sans donnée personnelle. `409` pour une fiche anonymisée ou désactivée.
  * @summary Carte de membre (PDF avec QR)
  */
 export const getMembresIdCarte = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Blob> => {
@@ -1700,7 +1813,7 @@ export const getGetMembresIdCarteQueryKey = (id: string,) => {
     }
 
 
-export const getGetMembresIdCarteQueryOptions = <TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresIdCarte>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+export const getGetMembresIdCarteQueryOptions = <TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresIdCarte>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1719,14 +1832,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMembresIdCarteQueryResult = NonNullable<Awaited<ReturnType<typeof getMembresIdCarte>>>
-export type GetMembresIdCarteQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>
+export type GetMembresIdCarteQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>
 
 
 /**
- * Permission : `membre.lire`. Exigences : RF-023.
+ * Permission : `membre.lire`. Exigences : RF-023, RG-MBR-008. PDF au format ID-1 ; QR = `assoflow:m:<association_id>:<membre_id>:<signature HMAC>`, sans donnée personnelle. `409` pour une fiche anonymisée ou désactivée.
  * @summary Carte de membre (PDF avec QR)
  */
-export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresIdCarte>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMembresIdCarte>>,
@@ -1737,10 +1850,10 @@ export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembre
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `membre.lire`. Exigences : RF-023.
+ * Permission : `membre.lire`. Exigences : RF-023, RG-MBR-008. PDF au format ID-1 ; QR = `assoflow:m:<association_id>:<membre_id>:<signature HMAC>`, sans donnée personnelle. `409` pour une fiche anonymisée ou désactivée.
  * @summary Carte de membre (PDF avec QR)
  */
-export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresIdCarte>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMembresIdCarte>>,
@@ -1751,18 +1864,18 @@ export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembre
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `membre.lire`. Exigences : RF-023.
+ * Permission : `membre.lire`. Exigences : RF-023, RG-MBR-008. PDF au format ID-1 ; QR = `assoflow:m:<association_id>:<membre_id>:<signature HMAC>`, sans donnée personnelle. `409` pour une fiche anonymisée ou désactivée.
  * @summary Carte de membre (PDF avec QR)
  */
-export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresIdCarte>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `membre.lire`. Exigences : RF-023.
+ * Permission : `membre.lire`. Exigences : RF-023, RG-MBR-008. PDF au format ID-1 ; QR = `assoflow:m:<association_id>:<membre_id>:<signature HMAC>`, sans donnée personnelle. `409` pour une fiche anonymisée ou désactivée.
  * @summary Carte de membre (PDF avec QR)
  */
-export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+export function useGetMembresIdCarte<TData = Awaited<ReturnType<typeof getMembresIdCarte>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembresIdCarte>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

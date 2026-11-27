@@ -22,6 +22,7 @@ import {
   PERMISSIONS_API,
   ROLES,
 } from './donnees';
+import { EXERCICE_OUVERT_ID, handlersSprint3, reinitialiserS3 } from './serveurSprint3';
 
 /** Réponse Problem Details conforme à docs/07 §4. */
 export function probleme(
@@ -78,6 +79,7 @@ export const etatServeur: {
 };
 
 export function reinitialiserServeur() {
+  reinitialiserS3();
   etatServeur.sessionCookie = undefined;
   etatServeur.requetes = [];
   etatServeur.membres = membresParDefaut();
@@ -96,7 +98,7 @@ export function reinitialiserServeur() {
   ];
   etatServeur.exercices = [
     {
-      id: 'e0',
+      id: '0190a1b2-0000-7000-8000-0000000000e0',
       libelle: '2026',
       dateDebut: '2026-01-01',
       dateFin: '2026-12-31',
@@ -104,7 +106,7 @@ export function reinitialiserServeur() {
       clotureAt: '2027-01-10T09:00:00Z',
     },
     {
-      id: 'e1',
+      id: EXERCICE_OUVERT_ID,
       libelle: '2027',
       dateDebut: '2027-01-01',
       dateFin: '2027-12-31',
@@ -216,6 +218,7 @@ export const handlers = [
   }),
   http.get(`${API}/roles`, () => json(ROLES)),
   http.get(`${API}/permissions`, () => json(PERMISSIONS_API)),
+  ...handlersSprint3(),
   ...handlersSprint2(),
 ];
 

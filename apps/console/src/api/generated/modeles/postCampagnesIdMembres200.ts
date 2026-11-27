@@ -7,5 +7,5 @@
  */
 
 export type PostCampagnesIdMembres200 = {
-  echeancesCreees?: number;
+  echeancesCreees: number;
 };

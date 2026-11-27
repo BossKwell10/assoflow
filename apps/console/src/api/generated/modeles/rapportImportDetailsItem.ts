@@ -8,8 +8,9 @@
 import type { RapportImportDetailsItemStatut } from './rapportImportDetailsItemStatut';
 
 export type RapportImportDetailsItem = {
-  ligne?: number;
-  statut?: RapportImportDetailsItemStatut;
+  ligne: number;
+  statut: RapportImportDetailsItemStatut;
+  nom: string;
   /** @nullable */
-  message?: string | null;
+  message: string | null;
 };

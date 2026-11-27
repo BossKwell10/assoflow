@@ -17,6 +17,7 @@ import { Link, useParams } from '@tanstack/react-router';
 import { useState } from 'react';
 import {
   getGetMembresIdQueryKey,
+  getMembresIdCarte,
   postMembresIdAnonymiser,
   postMembresIdDesactiver,
   postMembresIdReactiver,
@@ -28,6 +29,7 @@ import type { Membre } from '../../api/generated/modeles';
 import { useAuMoinsUnePermission, Si } from '../../auth/Si';
 import { t } from '../../i18n';
 import { ConfirmationAction } from '../../shared/ConfirmationAction';
+import { telechargerBlob } from '../../shared/csv';
 import { messageErreur } from '../../shared/erreurs';
 import { Montant } from '../../shared/Montant';
 import { BadgeStatut, Statut } from '../../shared/Statut';
@@ -59,6 +61,8 @@ export function FicheMembre() {
   const peutAnonymiser = useAuMoinsUnePermission('membre.anonymiser');
   const [action, setAction] = useState<Action>();
   const [succes, setSucces] = useState<string>();
+  const [carteEnCours, setCarteEnCours] = useState(false);
+  const [erreurCarte, setErreurCarte] = useState<string>();
 
   if (membre.isPending) return <Chargement />;
   if (membre.isError)
@@ -70,6 +74,17 @@ export function FicheMembre() {
 
   const m = membre.data;
   const nom = nomMembre(m);
+  const ouvrirCarte = async () => {
+    setCarteEnCours(true);
+    setErreurCarte(undefined);
+    try {
+      telechargerBlob(`carte-${m.numero ?? m.id}.pdf`, await getMembresIdCarte(id));
+    } catch (e) {
+      setErreurCarte(messageErreur(e));
+    } finally {
+      setCarteEnCours(false);
+    }
+  };
   const famille = ref.famille(m.familleId);
   const apres = async (maj: Membre, message: string) => {
     client.setQueryData(getGetMembresIdQueryKey(id), maj);
@@ -140,6 +155,12 @@ export function FicheMembre() {
                 </Button>
               </Si>
             )}
+            {/* RF-023 : carte PDF (refusée pour une fiche anonymisée ou désactivée). */}
+            {!m.anonymise && m.etat !== 'desactive' && (
+              <Button variant="default" loading={carteEnCours} onClick={() => void ouvrirCarte()}>
+                {t('membres.carte')}
+              </Button>
+            )}
             {(peutChangerEtat || (peutAnonymiser && !m.anonymise)) && (
               <Menu position="bottom-end" withinPortal>
                 <Menu.Target>
@@ -194,6 +215,11 @@ export function FicheMembre() {
         </SimpleGrid>
       </Card>
 
+      {erreurCarte && (
+        <Alert color="red" role="alert">
+          {erreurCarte}
+        </Alert>
+      )}
       <div role="status" aria-live="polite">
         {succes && (
           <Text c="#1B6B34" size="sm">

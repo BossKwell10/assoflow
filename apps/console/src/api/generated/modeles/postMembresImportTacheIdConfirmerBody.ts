@@ -8,4 +8,5 @@
 
 export type PostMembresImportTacheIdConfirmerBody = {
   inclureDoublons?: boolean;
+  attestationConsentement: true;
 };

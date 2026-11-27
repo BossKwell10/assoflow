@@ -22,7 +22,7 @@ import { t, type CleTexte } from '../i18n';
 export const MENU: { lien: string; cle: CleTexte; permissions: readonly Permission[] }[] = [
   { lien: '/', cle: 'menu.tableauDeBord', permissions: ['rapport.lire'] },
   { lien: '/membres', cle: 'menu.membres', permissions: ['membre.lire'] },
-  { lien: '/cotisations', cle: 'menu.cotisations', permissions: ['cotisation.lire'] },
+  { lien: '/cotisations/campagnes', cle: 'menu.cotisations', permissions: ['cotisation.lire'] },
   { lien: '/tresorerie', cle: 'menu.tresorerie', permissions: ['tresorerie.lire', 'depense.lire'] },
   { lien: '/depenses', cle: 'menu.depenses', permissions: ['depense.lire'] },
   { lien: '/projets', cle: 'menu.projets', permissions: ['projet.lire'] },

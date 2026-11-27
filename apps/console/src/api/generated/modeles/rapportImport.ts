@@ -8,10 +8,18 @@
 import type { RapportImportDetailsItem } from './rapportImportDetailsItem';
 
 export interface RapportImport {
-  tacheId?: string;
-  lignes?: number;
-  aCreer?: number;
-  doublons?: number;
-  erreurs?: number;
-  details?: RapportImportDetailsItem[];
+  tacheId: string;
+  nomFichier: string;
+  lignes: number;
+  aCreer: number;
+  doublons: number;
+  erreurs: number;
+  colonnesIgnorees: string[];
+  /**
+     * Tâche de confirmation, une fois l'import confirmé
+     * @nullable
+     */
+  confirmationId: string | null;
+  /** Lignes en doublon probable ou en erreur (numéro de ligne du fichier, en-tête = 1) */
+  details: RapportImportDetailsItem[];
 }
