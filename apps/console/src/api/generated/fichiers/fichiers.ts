@@ -123,7 +123,7 @@ export const getPostPiecesJointesUrl = () => {
 }
 
 /**
- * Permission : `authentifié + droit d'écriture sur l'entité`. Exigences : RF-041, RF-054.
+ * Permission : `authentifié + droit d'écriture sur l'entité` (`membre` → `membre.modifier`, `paiement` → `paiement.enregistrer`, `depense` → `depense.creer`, `projet` → `projet.gerer`). Exigences : RF-041, RF-054. `id` client (idempotence : même corps → 200, corps différent → 409). Entité introuvable → 422 `REFERENCE_INVALIDE`. Même traitement que le push de `pieces_jointes` (docs/05 §7).
  * @summary Déclarer une pièce jointe
  */
 export const postPiecesJointes = async (pieceJointe: NonReadonly<PieceJointe>, options?: Parameters<typeof clientApi>[1]): Promise<PieceJointe> => {
@@ -176,7 +176,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostPiecesJointesMutationVariables = {data: NonReadonly<PieceJointe>}
 
     /**
- * Permission : `authentifié + droit d'écriture sur l'entité`. Exigences : RF-041, RF-054.
+ * Permission : `authentifié + droit d'écriture sur l'entité` (`membre` → `membre.modifier`, `paiement` → `paiement.enregistrer`, `depense` → `depense.creer`, `projet` → `projet.gerer`). Exigences : RF-041, RF-054. `id` client (idempotence : même corps → 200, corps différent → 409). Entité introuvable → 422 `REFERENCE_INVALIDE`. Même traitement que le push de `pieces_jointes` (docs/05 §7).
  * @summary Déclarer une pièce jointe
  */
 export const usePostPiecesJointes = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -198,6 +198,7 @@ export const usePostPiecesJointes = <TError = ErrorType<NonAuthentifieResponse |
 }
 
 /**
+ * Déposant de la pièce ou titulaire du droit d'écriture sur l'entité. URL présignée `PUT` valable 10 min, à envoyer avec les `entetes` fournis (`content-type`). Pièce déjà reçue → 409 `ETAT_INCOMPATIBLE`.
  * @summary URL présignée d'envoi
  */
 export const postPiecesJointesIdUrlUpload = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<UrlPresignee> => {
@@ -249,7 +250,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostPiecesJointesIdUrlUploadMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
     export type PostPiecesJointesIdUrlUploadMutationVariables = {id: string}
 
-    /** @summary URL présignée d'envoi */
+    /**
+ * Déposant de la pièce ou titulaire du droit d'écriture sur l'entité. URL présignée `PUT` valable 10 min, à envoyer avec les `entetes` fournis (`content-type`). Pièce déjà reçue → 409 `ETAT_INCOMPATIBLE`.
+ * @summary URL présignée d'envoi
+ */
 export const usePostPiecesJointesIdUrlUpload = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postPiecesJointesIdUrlUpload>>, TError,PostPiecesJointesIdUrlUploadMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -269,6 +273,7 @@ export const usePostPiecesJointesIdUrlUpload = <TError = ErrorType<NonAuthentifi
 }
 
 /**
+ * Vérifie la présence du fichier, sa taille, son SHA-256 et son type réel (octets de signature) : `recu`, sinon `rejete` (422 `VALIDATION`, code `FICHIER_ABSENT`, `TAILLE_DIFFERENTE`, `EMPREINTE_DIFFERENTE` ou `TYPE_FICHIER_INVALIDE`). Idempotent pour une pièce déjà reçue.
  * @summary Confirmer la réception du fichier
  */
 export const postPiecesJointesIdConfirmer = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<PieceJointe> => {
@@ -320,7 +325,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostPiecesJointesIdConfirmerMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
     export type PostPiecesJointesIdConfirmerMutationVariables = {id: string}
 
-    /** @summary Confirmer la réception du fichier */
+    /**
+ * Vérifie la présence du fichier, sa taille, son SHA-256 et son type réel (octets de signature) : `recu`, sinon `rejete` (422 `VALIDATION`, code `FICHIER_ABSENT`, `TAILLE_DIFFERENTE`, `EMPREINTE_DIFFERENTE` ou `TYPE_FICHIER_INVALIDE`). Idempotent pour une pièce déjà reçue.
+ * @summary Confirmer la réception du fichier
+ */
 export const usePostPiecesJointesIdConfirmer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postPiecesJointesIdConfirmer>>, TError,PostPiecesJointesIdConfirmerMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -340,6 +348,7 @@ export const usePostPiecesJointesIdConfirmer = <TError = ErrorType<NonAuthentifi
 }
 
 /**
+ * Droit de lecture sur l'entité (`membre.lire`, `cotisation.lire`, `depense.lire`, `projet.lire`). URL de lecture de 5 min ; pièce pas encore reçue → 409 `ETAT_INCOMPATIBLE`.
  * @summary URL présignée de lecture
  */
 export const getPiecesJointesIdUrlTelechargement = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<UrlPresignee> => {
@@ -386,7 +395,10 @@ export type GetPiecesJointesIdUrlTelechargementQueryResult = NonNullable<Awaited
 export type GetPiecesJointesIdUrlTelechargementQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>
 
 
-/** @summary URL présignée de lecture */
+/**
+ * Droit de lecture sur l'entité (`membre.lire`, `cotisation.lire`, `depense.lire`, `projet.lire`). URL de lecture de 5 min ; pièce pas encore reçue → 409 `ETAT_INCOMPATIBLE`.
+ * @summary URL présignée de lecture
+ */
 export function useGetPiecesJointesIdUrlTelechargement<TData = Awaited<ReturnType<typeof getPiecesJointesIdUrlTelechargement>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPiecesJointesIdUrlTelechargement>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -397,7 +409,10 @@ export function useGetPiecesJointesIdUrlTelechargement<TData = Awaited<ReturnTyp
       >, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary URL présignée de lecture */
+/**
+ * Droit de lecture sur l'entité (`membre.lire`, `cotisation.lire`, `depense.lire`, `projet.lire`). URL de lecture de 5 min ; pièce pas encore reçue → 409 `ETAT_INCOMPATIBLE`.
+ * @summary URL présignée de lecture
+ */
 export function useGetPiecesJointesIdUrlTelechargement<TData = Awaited<ReturnType<typeof getPiecesJointesIdUrlTelechargement>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPiecesJointesIdUrlTelechargement>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -408,12 +423,18 @@ export function useGetPiecesJointesIdUrlTelechargement<TData = Awaited<ReturnTyp
       >, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary URL présignée de lecture */
+/**
+ * Droit de lecture sur l'entité (`membre.lire`, `cotisation.lire`, `depense.lire`, `projet.lire`). URL de lecture de 5 min ; pièce pas encore reçue → 409 `ETAT_INCOMPATIBLE`.
+ * @summary URL présignée de lecture
+ */
 export function useGetPiecesJointesIdUrlTelechargement<TData = Awaited<ReturnType<typeof getPiecesJointesIdUrlTelechargement>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPiecesJointesIdUrlTelechargement>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary URL présignée de lecture */
+/**
+ * Droit de lecture sur l'entité (`membre.lire`, `cotisation.lire`, `depense.lire`, `projet.lire`). URL de lecture de 5 min ; pièce pas encore reçue → 409 `ETAT_INCOMPATIBLE`.
+ * @summary URL présignée de lecture
+ */
 export function useGetPiecesJointesIdUrlTelechargement<TData = Awaited<ReturnType<typeof getPiecesJointesIdUrlTelechargement>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPiecesJointesIdUrlTelechargement>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient

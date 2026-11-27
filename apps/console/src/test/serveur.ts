@@ -24,6 +24,7 @@ import {
 } from './donnees';
 import { EXERCICE_OUVERT_ID, handlersSprint3, reinitialiserS3 } from './serveurSprint3';
 import { handlersSprint4, reinitialiserS4 } from './serveurSprint4';
+import { handlersSprint5, reinitialiserS5 } from './serveurSprint5';
 
 /** Réponse Problem Details conforme à docs/07 §4. */
 export function probleme(
@@ -82,6 +83,7 @@ export const etatServeur: {
 export function reinitialiserServeur() {
   reinitialiserS3();
   reinitialiserS4();
+  reinitialiserS5();
   etatServeur.sessionCookie = undefined;
   etatServeur.requetes = [];
   etatServeur.membres = membresParDefaut();
@@ -222,6 +224,7 @@ export const handlers = [
   http.get(`${API}/permissions`, () => json(PERMISSIONS_API)),
   ...handlersSprint3(),
   ...handlersSprint4(),
+  ...handlersSprint5(),
   ...handlersSprint2(),
 ];
 

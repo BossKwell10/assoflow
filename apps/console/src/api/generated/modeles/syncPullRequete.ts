@@ -11,6 +11,14 @@ export interface SyncPullRequete {
   curseur: number;
   versionSchema: number;
   versionApp: string;
-  /** @maximum 2000 */
+  /**
+     * @minimum 1
+     * @maximum 2000
+     */
   limite?: number;
+  /**
+     * Écritures locales pas encore poussées (affiché dans la console, A32)
+     * @minimum 0
+     */
+  elementsEnAttente?: number;
 }

@@ -7,10 +7,14 @@
  */
 
 export interface RejetSync {
-  id?: string;
-  table?: string;
-  elementId?: string;
-  code?: string;
-  message?: string;
-  createdAt?: string;
+  id: string;
+  table: string;
+  elementId: string;
+  code: string;
+  message: string;
+  createdAt: string;
+  appareilId: string;
+  appareilNom: string;
+  /** @nullable */
+  acquitteAt: string | null;
 }

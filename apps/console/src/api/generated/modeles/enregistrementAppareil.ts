@@ -12,4 +12,9 @@ export interface EnregistrementAppareil {
   plateforme: EnregistrementAppareilPlateforme;
   versionApp: string;
   jetonOtp: string;
+  /**
+     * Appareil déjà enregistré à rattacher (réinstallation, nouvelle connexion)
+     * @nullable
+     */
+  appareilId?: string | null;
 }

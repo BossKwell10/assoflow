@@ -27,10 +27,12 @@ import type {
 import type {
   Appareil,
   ErreurResponse,
+  GetSyncRejetsParams,
   InterditResponse,
   InvalideResponse,
   NonAuthentifieResponse,
   NonTrouveResponse,
+  PageRejetSync,
   PostAppareilsIdRevoquerBody,
   SyncPullReponse,
   SyncPullRequete,
@@ -94,7 +96,7 @@ export const getPostSyncPullUrl = () => {
 }
 
 /**
- * Permission : `authentifié (appareil)`. Exigences : RNF-001, RNF-014.
+ * Permission : `authentifié (appareil)` : jeton portant la claim `dev` d'un appareil non révoqué de l'association active (sinon 403 `PERMISSION_REFUSEE`, ou 401 `APPAREIL_REVOQUE`). Exigences : RNF-001, RNF-014. Périmètre selon le rôle (docs/05 §2) : vue « bureau » si `membre.lire`, sinon vue « membre ». 426 `APP_OBSOLETE` (`versionApp` < `MIN_APP_VERSION`) ou `SCHEMA_OBSOLETE` (version de schéma ni courante ni précédente). Autorisé pour un tenant suspendu.
  * @summary Récupérer les changements depuis un curseur
  */
 export const postSyncPull = async (syncPullRequete: SyncPullRequete, options?: Parameters<typeof clientApi>[1]): Promise<SyncPullReponse> => {
@@ -147,7 +149,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostSyncPullMutationVariables = {data: SyncPullRequete}
 
     /**
- * Permission : `authentifié (appareil)`. Exigences : RNF-001, RNF-014.
+ * Permission : `authentifié (appareil)` : jeton portant la claim `dev` d'un appareil non révoqué de l'association active (sinon 403 `PERMISSION_REFUSEE`, ou 401 `APPAREIL_REVOQUE`). Exigences : RNF-001, RNF-014. Périmètre selon le rôle (docs/05 §2) : vue « bureau » si `membre.lire`, sinon vue « membre ». 426 `APP_OBSOLETE` (`versionApp` < `MIN_APP_VERSION`) ou `SCHEMA_OBSOLETE` (version de schéma ni courante ni précédente). Autorisé pour un tenant suspendu.
  * @summary Récupérer les changements depuis un curseur
  */
 export const usePostSyncPull = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -169,7 +171,7 @@ export const usePostSyncPull = <TError = ErrorType<NonAuthentifieResponse | Inte
 }
 
 /**
- * Permission : `authentifié (appareil) + permissions par élément`. Exigences : RNF-001, RNF-014.
+ * Permission : `authentifié (appareil) + permissions par élément`. Exigences : RNF-001, RNF-014. 500 éléments au plus par lot (422 sinon). Chaque élément est traité dans sa propre transaction et reçoit un résultat (docs/05 §5) ; un rejet est enregistré et renvoyé par les pulls de cet appareil jusqu'à acquittement. 423 `TENANT_SUSPENDU` pour un tenant suspendu.
  * @summary Envoyer les écritures locales
  */
 export const postSyncPush = async (syncPushRequete: SyncPushRequete, options?: Parameters<typeof clientApi>[1]): Promise<SyncPushReponse> => {
@@ -222,7 +224,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostSyncPushMutationVariables = {data: SyncPushRequete}
 
     /**
- * Permission : `authentifié (appareil) + permissions par élément`. Exigences : RNF-001, RNF-014.
+ * Permission : `authentifié (appareil) + permissions par élément`. Exigences : RNF-001, RNF-014. 500 éléments au plus par lot (422 sinon). Chaque élément est traité dans sa propre transaction et reçoit un résultat (docs/05 §5) ; un rejet est enregistré et renvoyé par les pulls de cet appareil jusqu'à acquittement. 423 `TENANT_SUSPENDU` pour un tenant suspendu.
  * @summary Envoyer les écritures locales
  */
 export const usePostSyncPush = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -235,7 +237,127 @@ export const usePostSyncPush = <TError = ErrorType<NonAuthentifieResponse | Inte
       > => {
       return useMutation(getPostSyncPushMutationOptions(options), queryClient);
     }
-    export const getPostSyncRejetsIdAcquitterUrl = (id: string,) => {
+    export const getGetSyncRejetsUrl = (params?: GetSyncRejetsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/sync/rejets?${stringifiedParams}` : `/sync/rejets`
+}
+
+/**
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Écran A32 : rejets par appareil, plus récents d'abord ; non acquittés seulement par défaut.
+ * @summary Rejets de synchronisation (console)
+ */
+export const getSyncRejets = async (params?: GetSyncRejetsParams, options?: Parameters<typeof clientApi>[1]): Promise<PageRejetSync> => {
+
+  return clientApi<PageRejetSync>(getGetSyncRejetsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSyncRejetsQueryKey = (params?: GetSyncRejetsParams,) => {
+    return [
+    `/sync/rejets`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSyncRejetsQueryOptions = <TData = Awaited<ReturnType<typeof getSyncRejets>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(params?: GetSyncRejetsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncRejets>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSyncRejetsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSyncRejets>>> = ({ signal }) => getSyncRejets(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSyncRejets>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSyncRejetsQueryResult = NonNullable<Awaited<ReturnType<typeof getSyncRejets>>>
+export type GetSyncRejetsQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>
+
+
+/**
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Écran A32 : rejets par appareil, plus récents d'abord ; non acquittés seulement par défaut.
+ * @summary Rejets de synchronisation (console)
+ */
+export function useGetSyncRejets<TData = Awaited<ReturnType<typeof getSyncRejets>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
+ params: undefined |  GetSyncRejetsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncRejets>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncRejets>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncRejets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Écran A32 : rejets par appareil, plus récents d'abord ; non acquittés seulement par défaut.
+ * @summary Rejets de synchronisation (console)
+ */
+export function useGetSyncRejets<TData = Awaited<ReturnType<typeof getSyncRejets>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
+ params?: GetSyncRejetsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncRejets>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncRejets>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncRejets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Écran A32 : rejets par appareil, plus récents d'abord ; non acquittés seulement par défaut.
+ * @summary Rejets de synchronisation (console)
+ */
+export function useGetSyncRejets<TData = Awaited<ReturnType<typeof getSyncRejets>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
+ params?: GetSyncRejetsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncRejets>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Écran A32 : rejets par appareil, plus récents d'abord ; non acquittés seulement par défaut.
+ * @summary Rejets de synchronisation (console)
+ */
+export function useGetSyncRejets<TData = Awaited<ReturnType<typeof getSyncRejets>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
+ params?: GetSyncRejetsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncRejets>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSyncRejetsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPostSyncRejetsIdAcquitterUrl = (id: string,) => {
 
 
 
@@ -244,7 +366,7 @@ export const usePostSyncPush = <TError = ErrorType<NonAuthentifieResponse | Inte
 }
 
 /**
- * Permission : `authentifié (appareil)`.
+ * Permission : `authentifié (appareil)`. Seulement un rejet de l'appareil du jeton (404 sinon) ; idempotent.
  * @summary Acquitter un rejet
  */
 export const postSyncRejetsIdAcquitter = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<void> => {
@@ -297,7 +419,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostSyncRejetsIdAcquitterMutationVariables = {id: string}
 
     /**
- * Permission : `authentifié (appareil)`.
+ * Permission : `authentifié (appareil)`. Seulement un rejet de l'appareil du jeton (404 sinon) ; idempotent.
  * @summary Acquitter un rejet
  */
 export const usePostSyncRejetsIdAcquitter = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
@@ -319,7 +441,7 @@ export const usePostSyncRejetsIdAcquitter = <TError = ErrorType<NonAuthentifieRe
 }
 
 /**
- * Permission : `utilisateur.lire`. Exigences : RF-SUP-033.
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Appareils de l'association, révoqués compris, plus récemment synchronisés d'abord.
  * @summary Appareils et état de synchronisation
  */
 export const getAppareils = async ( options?: Parameters<typeof clientApi>[1]): Promise<Appareil[]> => {
@@ -367,7 +489,7 @@ export type GetAppareilsQueryError = ErrorType<NonAuthentifieResponse | Interdit
 
 
 /**
- * Permission : `utilisateur.lire`. Exigences : RF-SUP-033.
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Appareils de l'association, révoqués compris, plus récemment synchronisés d'abord.
  * @summary Appareils et état de synchronisation
  */
 export function useGetAppareils<TData = Awaited<ReturnType<typeof getAppareils>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -381,7 +503,7 @@ export function useGetAppareils<TData = Awaited<ReturnType<typeof getAppareils>>
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `utilisateur.lire`. Exigences : RF-SUP-033.
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Appareils de l'association, révoqués compris, plus récemment synchronisés d'abord.
  * @summary Appareils et état de synchronisation
  */
 export function useGetAppareils<TData = Awaited<ReturnType<typeof getAppareils>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -395,7 +517,7 @@ export function useGetAppareils<TData = Awaited<ReturnType<typeof getAppareils>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `utilisateur.lire`. Exigences : RF-SUP-033.
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Appareils de l'association, révoqués compris, plus récemment synchronisés d'abord.
  * @summary Appareils et état de synchronisation
  */
 export function useGetAppareils<TData = Awaited<ReturnType<typeof getAppareils>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -403,7 +525,7 @@ export function useGetAppareils<TData = Awaited<ReturnType<typeof getAppareils>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `utilisateur.lire`. Exigences : RF-SUP-033.
+ * Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Appareils de l'association, révoqués compris, plus récemment synchronisés d'abord.
  * @summary Appareils et état de synchronisation
  */
 export function useGetAppareils<TData = Awaited<ReturnType<typeof getAppareils>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -432,7 +554,7 @@ export const getPostAppareilsIdRevoquerUrl = (id: string,) => {
 }
 
 /**
- * Permission : `utilisateur.gerer`. Exigences : RF-ADM-014.
+ * Permission : `utilisateur.gerer`. Exigences : RF-ADM-014. Révoque l'appareil et ses sessions : toute requête suivante avec ce jeton reçoit 401 `APPAREIL_REVOQUE` (`erreurs[0].code = PURGE_DEMANDEE` si `purger`, l'app efface alors sa base locale). Déjà révoqué → 409 `ETAT_INCOMPATIBLE`.
  * @summary Révoquer un appareil (et purger)
  */
 export const postAppareilsIdRevoquer = async (id: string,
@@ -486,7 +608,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostAppareilsIdRevoquerMutationVariables = {id: string;data: PostAppareilsIdRevoquerBody}
 
     /**
- * Permission : `utilisateur.gerer`. Exigences : RF-ADM-014.
+ * Permission : `utilisateur.gerer`. Exigences : RF-ADM-014. Révoque l'appareil et ses sessions : toute requête suivante avec ce jeton reçoit 401 `APPAREIL_REVOQUE` (`erreurs[0].code = PURGE_DEMANDEE` si `purger`, l'app efface alors sa base locale). Déjà révoqué → 409 `ETAT_INCOMPATIBLE`.
  * @summary Révoquer un appareil (et purger)
  */
 export const usePostAppareilsIdRevoquer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,

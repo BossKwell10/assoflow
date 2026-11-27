@@ -16,6 +16,7 @@ import { Coquille } from './layout/Coquille';
 import { validerRechercheCampagnes, validerRechercheEcheances } from './features/cotisations/recherche';
 import { validerRechercheFamilles, validerRechercheMembres } from './features/membres/recherche';
 import { validerRechercheCommunication } from './features/communication/recherche';
+import { validerRechercheAppareils } from './features/parametres/rechercheAppareils';
 import { validerRecherchePaiements, validerRechercheSaisie } from './features/paiements/recherche';
 import { APlusTard } from './routes/APlusTard';
 
@@ -194,6 +195,17 @@ const communication = createRoute({
   ),
 });
 
+// --- Appareils et rejets de synchronisation (A32) : sprint 5
+const appareils = createRoute({
+  getParentRoute: () => espace,
+  path: '/parametres/appareils',
+  validateSearch: validerRechercheAppareils,
+  component: protege(
+    'utilisateur.lire',
+    lazyRouteComponent(() => import('./features/parametres/Appareils'), 'Appareils'),
+  ),
+});
+
 export const routeTree = racine.addChildren([
   connexion,
   motDePasseOublie,
@@ -231,6 +243,7 @@ export const routeTree = racine.addChildren([
     paiements,
     saisiePaiements,
     communication,
+    appareils,
     ecran(
       '/reunions',
       'reunion.gerer',

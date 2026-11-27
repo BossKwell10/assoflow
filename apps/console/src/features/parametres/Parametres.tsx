@@ -9,7 +9,8 @@ const ECRANS: {
     | '/parametres/association'
     | '/parametres/exercices'
     | '/parametres/categories'
-    | '/parametres/utilisateurs';
+    | '/parametres/utilisateurs'
+    | '/parametres/appareils';
   titre: CleTexte;
   description: CleTexte;
   permission: Permission[];
@@ -38,9 +39,15 @@ const ECRANS: {
     description: 'parametres.utilisateursDescription',
     permission: ['utilisateur.lire', 'utilisateur.gerer'],
   },
+  {
+    lien: '/parametres/appareils',
+    titre: 'parametres.appareils',
+    description: 'parametres.appareilsDescription',
+    permission: ['utilisateur.lire'],
+  },
 ];
 
-/** Index des paramètres (A27–A33) ; A31 à A33 arrivent aux sprints suivants. */
+/** Index des paramètres (A27–A33) ; A31 et A33 arrivent aux sprints suivants. */
 export function Parametres() {
   return (
     <Stack gap="lg" maw={1240}>

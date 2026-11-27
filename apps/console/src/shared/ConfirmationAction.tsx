@@ -15,6 +15,7 @@ export function ConfirmationAction({
   onFermer,
   titre,
   resume,
+  complement,
   libelleConfirmer,
   motifRequis = false,
   danger = false,
@@ -26,6 +27,8 @@ export function ConfirmationAction({
   onFermer: () => void;
   titre: string;
   resume: ReactNode;
+  /** Champs supplémentaires sous le résumé (cases à cocher, options). */
+  complement?: ReactNode;
   libelleConfirmer: string;
   motifRequis?: boolean;
   danger?: boolean;
@@ -77,6 +80,7 @@ export function ConfirmationAction({
     <Modal opened={ouvert} onClose={fermer} title={titre} centered>
       <Stack>
         <Text>{resume}</Text>
+        {complement}
         {etape === 1 && motifRequis && (
           <Textarea
             label={t('confirmation.motif')}

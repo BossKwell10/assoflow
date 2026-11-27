@@ -9,17 +9,19 @@ import type { AppareilPlateforme } from './appareilPlateforme';
 import type { AppareilUtilisateur } from './appareilUtilisateur';
 
 export interface Appareil {
-  id?: string;
-  nom?: string;
-  plateforme?: AppareilPlateforme;
-  versionApp?: string;
-  prefixeRecu?: string;
-  utilisateur?: AppareilUtilisateur;
+  id: string;
+  nom: string;
+  plateforme: AppareilPlateforme;
+  versionApp: string;
+  prefixeRecu: string;
+  utilisateur: AppareilUtilisateur;
   /** @nullable */
-  derniereSync?: string | null;
+  derniereSync: string | null;
   /** @nullable */
-  elementsEnAttente?: number | null;
-  rejetsNonAcquittes?: number;
+  elementsEnAttente: number | null;
+  rejetsNonAcquittes: number;
   /** @nullable */
-  revoqueAt?: string | null;
+  revoqueAt: string | null;
+  purgeDemandee: boolean;
+  createdAt: string;
 }

@@ -160,7 +160,9 @@
     "categoriesDescription": "Catégories de membres et de dépenses.",
     "utilisateurs": "Utilisateurs et rôles",
     "utilisateursDescription": "Accès à la console et à l’app, invitations, révocations, matrice des rôles.",
-    "aVenir": "Délégations, appareils et accès support arrivent aux sprints suivants."
+    "aVenir": "Délégations et accès support arrivent aux sprints suivants.",
+    "appareils": "Appareils",
+    "appareilsDescription": "Appareils mobiles enregistrés, synchronisations, rejets à corriger, révocation."
   },
   "utilisateurs": {
     "titre": "Utilisateurs et rôles",
@@ -827,5 +829,40 @@
     "apercuAide": "Aperçu avec le modèle global ; un texte personnalisé par l’association sera utilisé à l’envoi.",
     "confirmation": "Les convocations partent immédiatement par SMS et sont décomptées du quota mensuel. Les membres déjà convoqués ne reçoivent pas de second message.",
     "envoyerConvocations": "Envoyer les convocations"
+  },
+  "appareils": {
+    "titre": "Appareils",
+    "description": "Appareils mobiles enregistrés dans l’association et état de leur synchronisation. Une révocation coupe immédiatement l’accès de l’appareil.",
+    "colUtilisateur": "Utilisateur",
+    "colAppareil": "Appareil",
+    "colVersion": "Version de l’app",
+    "colPrefixe": "Préfixe de reçu",
+    "colDerniereSync": "Dernière synchronisation",
+    "colEnAttente": "En attente",
+    "colRejets": "Rejets",
+    "colStatut": "Statut",
+    "colActions": "Actions",
+    "jamais": "Jamais",
+    "rejetsNombre": "{n} à corriger",
+    "voirRejets": "Voir les {n} rejet(s) de {nom}",
+    "purgeDemandee": "Purge demandée",
+    "revoquer": "Révoquer",
+    "revoquerAppareil": "Révoquer l’appareil {nom}",
+    "revoquerTitre": "Révoquer l’appareil",
+    "revoquerResume": "Révoquer « {nom} » de {utilisateur} (préfixe de reçu {prefixe}) ? Ses sessions sont fermées immédiatement ; le préfixe ne sera jamais réattribué.",
+    "purger": "Effacer les données de l’appareil (purge)",
+    "purgerAide": "À la prochaine connexion, l’app efface sa base locale, y compris les écritures non synchronisées.",
+    "aucun": "Aucun appareil enregistré.",
+    "rejetsTitre": "Rejets de synchronisation",
+    "filtreAppareil": "Appareil",
+    "tousAppareils": "Tous les appareils",
+    "inclureAcquittes": "Inclure les rejets acquittés",
+    "rejetsAide": "Les rejets sont corrigés et acquittés depuis l’app, dans l’écran « À corriger ».",
+    "aucunRejet": "Aucun rejet à corriger.",
+    "colDate": "Date",
+    "colTable": "Table",
+    "colElement": "Élément",
+    "colCode": "Code",
+    "colMessage": "Message"
   }
 }

@@ -25,7 +25,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  Appareil,
+  AppareilEnregistre,
   EnregistrementAppareil,
   ErreurResponse,
   EtapeTotp,
@@ -951,12 +951,12 @@ export const usePostAuthContexte = <TError = ErrorType<NonAuthentifieResponse | 
 }
 
 /**
- * Exigences : RNF-001.
+ * Exigences : RNF-001, RG-NUM-003. Jeton d'accès mobile avec association active + `jetonOtp` obtenu par `POST /auth/otp/verifier` (but `confirmation_appareil`) pour le même utilisateur. Crée l'appareil dans l'association active et lui attribue un préfixe de reçu (lettre + 2 chiffres, unique, jamais réattribué), lie la session à l'appareil et renvoie un jeton d'accès portant la claim `dev` (exigée par `/sync/*`). Avec `appareilId` (appareil existant, non révoqué, du même utilisateur) : rattache la session sans nouveau préfixe (200). Le second facteur du bureau sur mobile est l'appareil enregistré (docs/04 §1).
  * @summary Enregistrer un appareil mobile
  */
-export const postAuthAppareils = async (enregistrementAppareil: EnregistrementAppareil, options?: Parameters<typeof clientApi>[1]): Promise<Appareil> => {
+export const postAuthAppareils = async (enregistrementAppareil: EnregistrementAppareil, options?: Parameters<typeof clientApi>[1]): Promise<AppareilEnregistre> => {
 
-  return clientApi<Appareil>(getPostAuthAppareilsUrl(),
+  return clientApi<AppareilEnregistre>(getPostAuthAppareilsUrl(),
   {
     ...options,
     method: 'POST',
@@ -1004,7 +1004,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostAuthAppareilsMutationVariables = {data: EnregistrementAppareil}
 
     /**
- * Exigences : RNF-001.
+ * Exigences : RNF-001, RG-NUM-003. Jeton d'accès mobile avec association active + `jetonOtp` obtenu par `POST /auth/otp/verifier` (but `confirmation_appareil`) pour le même utilisateur. Crée l'appareil dans l'association active et lui attribue un préfixe de reçu (lettre + 2 chiffres, unique, jamais réattribué), lie la session à l'appareil et renvoie un jeton d'accès portant la claim `dev` (exigée par `/sync/*`). Avec `appareilId` (appareil existant, non révoqué, du même utilisateur) : rattache la session sans nouveau préfixe (200). Le second facteur du bureau sur mobile est l'appareil enregistré (docs/04 §1).
  * @summary Enregistrer un appareil mobile
  */
 export const usePostAuthAppareils = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
