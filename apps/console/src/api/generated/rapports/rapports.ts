@@ -338,7 +338,7 @@ export const getPostRapportsUrl = () => {
 }
 
 /**
- * Permission : `rapport.exporter`. Exigences : RF-039, RF-071, RF-072, RF-073, RF-ADM-042.
+ * Permission : `rapport.exporter`. Exigences : RF-039, RF-071, RF-072, RF-073, RF-ADM-042. Sprint 4 : `export_cotisants` (format `xlsx`, paramètres `campagneId` ou `exerciceId`, sinon toutes les échéances) ; les autres types répondent 422 `VALIDATION` (`NON_DISPONIBLE`) jusqu'aux sprints suivants. Une fois la tâche `terminee`, `resultat.url` (lecture présignée de 5 min) et `resultat.nomFichier` sont fournis par `GET /taches/{id}`.
  * @summary Demander un rapport ou un export
  */
 export const postRapports = async (demandeRapport: DemandeRapport, options?: Parameters<typeof clientApi>[1]): Promise<Tache> => {
@@ -391,7 +391,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostRapportsMutationVariables = {data: DemandeRapport}
 
     /**
- * Permission : `rapport.exporter`. Exigences : RF-039, RF-071, RF-072, RF-073, RF-ADM-042.
+ * Permission : `rapport.exporter`. Exigences : RF-039, RF-071, RF-072, RF-073, RF-ADM-042. Sprint 4 : `export_cotisants` (format `xlsx`, paramètres `campagneId` ou `exerciceId`, sinon toutes les échéances) ; les autres types répondent 422 `VALIDATION` (`NON_DISPONIBLE`) jusqu'aux sprints suivants. Une fois la tâche `terminee`, `resultat.url` (lecture présignée de 5 min) et `resultat.nomFichier` sont fournis par `GET /taches/{id}`.
  * @summary Demander un rapport ou un export
  */
 export const usePostRapports = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -588,6 +588,7 @@ export const getGetTachesIdUrl = (id: string,) => {
 }
 
 /**
+ * Tâche du demandeur. Une tâche terminée qui produit un fichier expose `resultat.url` (URL de lecture valable 5 min, recalculée à chaque appel) et `resultat.nomFichier`.
  * @summary État d'une tâche
  */
 export const getTachesId = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Tache> => {
@@ -634,7 +635,10 @@ export type GetTachesIdQueryResult = NonNullable<Awaited<ReturnType<typeof getTa
 export type GetTachesIdQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>
 
 
-/** @summary État d'une tâche */
+/**
+ * Tâche du demandeur. Une tâche terminée qui produit un fichier expose `resultat.url` (URL de lecture valable 5 min, recalculée à chaque appel) et `resultat.nomFichier`.
+ * @summary État d'une tâche
+ */
 export function useGetTachesId<TData = Awaited<ReturnType<typeof getTachesId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTachesId>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -645,7 +649,10 @@ export function useGetTachesId<TData = Awaited<ReturnType<typeof getTachesId>>, 
       >, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary État d'une tâche */
+/**
+ * Tâche du demandeur. Une tâche terminée qui produit un fichier expose `resultat.url` (URL de lecture valable 5 min, recalculée à chaque appel) et `resultat.nomFichier`.
+ * @summary État d'une tâche
+ */
 export function useGetTachesId<TData = Awaited<ReturnType<typeof getTachesId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTachesId>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -656,12 +663,18 @@ export function useGetTachesId<TData = Awaited<ReturnType<typeof getTachesId>>, 
       >, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary État d'une tâche */
+/**
+ * Tâche du demandeur. Une tâche terminée qui produit un fichier expose `resultat.url` (URL de lecture valable 5 min, recalculée à chaque appel) et `resultat.nomFichier`.
+ * @summary État d'une tâche
+ */
 export function useGetTachesId<TData = Awaited<ReturnType<typeof getTachesId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTachesId>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary État d'une tâche */
+/**
+ * Tâche du demandeur. Une tâche terminée qui produit un fichier expose `resultat.url` (URL de lecture valable 5 min, recalculée à chaque appel) et `resultat.nomFichier`.
+ * @summary État d'une tâche
+ */
 export function useGetTachesId<TData = Awaited<ReturnType<typeof getTachesId>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTachesId>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient

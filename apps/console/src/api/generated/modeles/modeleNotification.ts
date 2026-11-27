@@ -14,4 +14,9 @@ export interface ModeleNotification {
   contenu: string;
   readonly variables?: readonly string[];
   readonly personnalise?: boolean;
+  readonly libelle?: string;
+  /** Texte du modèle global (rétabli par `DELETE`) */
+  readonly contenuGlobal?: string;
+  /** Unités SMS du texte brut (GSM-7 160/153, Unicode 70/67, docs/06 §4.3) */
+  readonly unites?: number;
 }

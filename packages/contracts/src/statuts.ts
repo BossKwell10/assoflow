@@ -40,6 +40,26 @@ export const STATUTS = {
     active: { libelle: 'Active', ton: 'succes' },
     cloturee: { libelle: 'Clôturée', ton: 'neutre' },
   },
+  /** Paiement effectif, annulé (RG-COT-040) ou ligne d'annulation. */
+  paiement: {
+    effectif: { libelle: 'Effectif', ton: 'succes' },
+    annule: { libelle: 'Annulé', ton: 'neutre' },
+    annulation: { libelle: 'Annulation', ton: 'alerte' },
+  },
+  /** Outbox des notifications (docs/06 §1). */
+  notification: {
+    en_attente: { libelle: 'En attente', ton: 'attente' },
+    envoyee: { libelle: 'Envoyé', ton: 'attente' },
+    remise: { libelle: 'Remis', ton: 'succes' },
+    echec: { libelle: 'Échec', ton: 'alerte' },
+    annulee: { libelle: 'Annulé', ton: 'neutre' },
+    hors_quota: { libelle: 'Hors quota', ton: 'alerte' },
+  },
+  reunion: {
+    planifiee: { libelle: 'Planifiée', ton: 'attente' },
+    tenue: { libelle: 'Tenue', ton: 'succes' },
+    annulee: { libelle: 'Annulée', ton: 'neutre' },
+  },
   tache: {
     en_attente: { libelle: 'En attente', ton: 'attente' },
     en_cours: { libelle: 'En cours', ton: 'attente' },

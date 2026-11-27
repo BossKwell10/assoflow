@@ -9,3 +9,5 @@ export * from './uuid.js';
 export * from './membres.js';
 export * from './statuts.js';
 export * from './cotisations.js';
+export * from './paiements.js';
+export * from './notifications.js';

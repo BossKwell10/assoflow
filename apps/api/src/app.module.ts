@@ -10,6 +10,10 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { CotisationsModule } from './modules/cotisations/cotisations.module.js';
 import { HealthController } from './modules/health/health.controller.js';
 import { MembresModule } from './modules/membres/membres.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { PaiementsModule } from './modules/paiements/paiements.module.js';
+import { ReunionsModule } from './modules/reunions/reunions.module.js';
+import { TresorerieModule } from './modules/tresorerie/tresorerie.module.js';
 import { TachesModule } from './modules/taches/taches.module.js';
 import { UtilisateursModule } from './modules/utilisateurs/utilisateurs.module.js';
 
@@ -22,6 +26,10 @@ import { UtilisateursModule } from './modules/utilisateurs/utilisateurs.module.j
     AssociationsModule,
     MembresModule,
     CotisationsModule,
+    NotificationsModule,
+    TresorerieModule,
+    PaiementsModule,
+    ReunionsModule,
   ],
   controllers: [HealthController],
   providers: [

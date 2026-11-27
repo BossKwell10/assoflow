@@ -6,26 +6,28 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { Imputation } from './imputation';
+import type { PaiementAnnulation } from './paiementAnnulation';
 import type { PaiementMode } from './paiementMode';
 import type { PaiementOperateurMm } from './paiementOperateurMm';
 import type { PaiementSaisiPar } from './paiementSaisiPar';
 import type { PaiementType } from './paiementType';
+import type { RecuSms } from './recuSms';
 
 export interface Paiement {
   /** UUIDv7 fourni par le client (clé d'idempotence) */
   id: string;
-  readonly type?: PaiementType;
+  readonly type: PaiementType;
   /** @nullable */
-  readonly annulePaiementId?: string | null;
-  readonly numeroRecu?: string;
+  readonly annulePaiementId: string | null;
+  readonly numeroRecu: string;
   /** @nullable */
-  numeroRecuProvisoire?: string | null;
+  numeroRecuProvisoire: string | null;
   /** @nullable */
-  membreId?: string | null;
+  membreId: string | null;
   /** @nullable */
-  familleId?: string | null;
+  familleId: string | null;
   /** @nullable */
-  campagneId?: string | null;
+  campagneId: string | null;
   /**
      * Montant en FCFA (XOF), entier
      * @minimum 1
@@ -34,15 +36,31 @@ export interface Paiement {
   montant: number;
   mode: PaiementMode;
   /** @nullable */
-  operateurMm?: PaiementOperateurMm;
+  operateurMm: PaiementOperateurMm;
   /** @nullable */
-  referenceExterne?: string | null;
+  referenceExterne: string | null;
   compteId: string;
   datePaiement: string;
-  readonly recuServeurAt?: string;
-  readonly saisiPar?: PaiementSaisiPar;
-  readonly annule?: boolean;
-  readonly imputations?: readonly Imputation[];
+  readonly recuServeurAt: string;
+  readonly saisiPar: PaiementSaisiPar;
+  readonly annule: boolean;
+  readonly imputations: readonly Imputation[];
   /** @nullable */
-  motif?: string | null;
+  motif: string | null;
+  /** @nullable */
+  readonly membreNumero: string | null;
+  /** @nullable */
+  readonly membreNom: string | null;
+  /** @nullable */
+  readonly familleNom: string | null;
+  readonly compteLibelle: string;
+  readonly exerciceId: string;
+  /**
+     * Ligne d'annulation de ce paiement (RG-COT-040), s'il a été annulé
+     * @nullable
+     */
+  readonly annulation: PaiementAnnulation;
+  /** L'utilisateur courant peut annuler ce paiement (RG-COT-040, RG-COT-041) */
+  readonly annulable: boolean;
+  readonly recuSms: RecuSms | null;
 }

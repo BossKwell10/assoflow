@@ -8,8 +8,11 @@
 import type { ConsommationSmsParModele } from './consommationSmsParModele';
 
 export interface ConsommationSms {
-  mois?: string;
-  quota?: number;
-  unites?: number;
-  parModele?: ConsommationSmsParModele;
+  mois: string;
+  quota: number;
+  unites: number;
+  pourcentage: number;
+  /** Messages non envoyés ce mois-ci faute de quota */
+  horsQuota: number;
+  parModele: ConsommationSmsParModele;
 }

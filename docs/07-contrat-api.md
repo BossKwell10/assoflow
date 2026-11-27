@@ -1,6 +1,6 @@
 # 07 — Contrat d'API
 
-Le contrat de référence est [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1, 183 opérations, validé avec
+Le contrat de référence est [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1, 184 opérations, validé avec
 `openapi-spec-validator`). Le client TypeScript de la console est **généré** à partir de ce fichier (orval) ;
 le backend vérifie en CI que ses routes correspondent au contrat (test de conformité, voir 09). Toute modification
 d'API commence par une modification de `openapi.yaml` dans la même merge request.
@@ -206,6 +206,7 @@ Généré depuis `openapi.yaml` ; la colonne « Exigences » renvoie au cahier d
 | `GET` | `/v1/echeances` | `cotisation.lire` | Lister les échéances | RF-031, RF-035 |
 | `PATCH` | `/v1/echeances/{id}` | `cotisation.gerer` | Ajuster une échéance sans imputation | RF-031 |
 | `POST` | `/v1/echeances/{id}/exonerer` | `cotisation.exonerer` | Exonérer une échéance |  |
+| `POST` | `/v1/echeances/relancer` | `cotisation.gerer` | Relancer les membres d'échéances en retard (A10) | RF-036 |
 | `GET` | `/v1/paiements` | `cotisation.lire` | Lister les paiements |  |
 | `POST` | `/v1/paiements` | `paiement.enregistrer` | Enregistrer un paiement (mode connecté) | RF-032, RF-033, RF-034, RF-038 |
 | `GET` | `/v1/paiements/{id}` | `cotisation.lire` | Détail d'un paiement |  |

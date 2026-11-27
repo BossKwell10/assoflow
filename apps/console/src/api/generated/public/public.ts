@@ -166,7 +166,7 @@ export const usePostPublicDemandesAssociation = <TError = ErrorType<InvalideResp
 }
 
 /**
- * Authentifié par signature ou jeton propre au fournisseur.
+ * Authentifié par signature ou jeton propre au fournisseur (en-tête `X-Webhook-Token` comparé au secret `SMS_<FOURNISSEUR>_WEBHOOK_SECRET`). Met à jour `statut = remise` (et `remise_at`) ou `echec` de la notification correspondant à l'identifiant du fournisseur. Accusé inconnu → 204 (pas de rejeu par le fournisseur) ; fournisseur inconnu ou jeton invalide → 404.
  * @summary Accusé de remise SMS
  */
 export const postWebhooksSmsFournisseur = async (fournisseur: string,
@@ -220,7 +220,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostWebhooksSmsFournisseurMutationVariables = {fournisseur: string;data: PostWebhooksSmsFournisseurBody}
 
     /**
- * Authentifié par signature ou jeton propre au fournisseur.
+ * Authentifié par signature ou jeton propre au fournisseur (en-tête `X-Webhook-Token` comparé au secret `SMS_<FOURNISSEUR>_WEBHOOK_SECRET`). Met à jour `statut = remise` (et `remise_at`) ou `echec` de la notification correspondant à l'identifiant du fournisseur. Accusé inconnu → 204 (pas de rejeu par le fournisseur) ; fournisseur inconnu ou jeton invalide → 404.
  * @summary Accusé de remise SMS
  */
 export const usePostWebhooksSmsFournisseur = <TError = ErrorType<NonTrouveResponse | InvalideResponse | ErreurResponse>,

@@ -8,15 +8,33 @@
 import type { NotificationStatut } from './notificationStatut';
 
 export interface Notification {
-  id?: string;
-  canal?: string;
-  modeleCode?: string;
-  destinataireMasque?: string;
-  statut?: NotificationStatut;
+  id: string;
+  canal: string;
+  modeleCode: string;
+  destinataireMasque: string;
+  statut: NotificationStatut;
   /** @nullable */
-  fournisseur?: string | null;
-  unites?: number;
-  createdAt?: string;
+  fournisseur: string | null;
+  unites: number;
+  createdAt: string;
   /** @nullable */
-  remiseAt?: string | null;
+  remiseAt: string | null;
+  /** @nullable */
+  membreId: string | null;
+  /** @nullable */
+  membreNom: string | null;
+  /** Envoyé au chef de famille d'un membre sans téléphone (RF-060) */
+  relaisFamille: boolean;
+  /** 1 = reçu, OTP, décision ; 5 = rappel, convocation ; 9 = annonce */
+  priorite: number;
+  /** @nullable */
+  origineType: string | null;
+  /** @nullable */
+  origineId: string | null;
+  contenu: string;
+  tentatives: number;
+  /** @nullable */
+  derniereErreur: string | null;
+  /** @nullable */
+  envoyeeAt: string | null;
 }

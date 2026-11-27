@@ -6,6 +6,7 @@ import { expect } from 'vitest';
 import { creerApplication } from '../src/bootstrap.js';
 import { FOURNISSEUR_SMS } from '../src/infra/sms/fournisseur-sms.js';
 import type { JournalSms } from '../src/infra/sms/journal-sms.js';
+import type { RouteurSms } from '../src/infra/sms/routeur-sms.js';
 import { AssociationsService } from '../src/modules/associations/associations.service.js';
 import { decoderBase32, totp } from '../src/modules/auth/domain/totp.js';
 
@@ -21,7 +22,9 @@ export function telephoneFictif(): string {
 
 export interface Banc {
   app: NestFastifyApplication;
+  /** Fournisseur `journal` (SMS_PROVIDERS par défaut en test) : messages envoyés par numéro. */
   sms: JournalSms;
+  routeurSms: RouteurSms;
   associations: AssociationsService;
   owner: pg.Client;
   fermer(): Promise<void>;
@@ -35,7 +38,8 @@ export async function demarrer(): Promise<Banc> {
   await owner.connect();
   return {
     app,
-    sms: app.get<JournalSms>(FOURNISSEUR_SMS),
+    sms: app.get<RouteurSms>(FOURNISSEUR_SMS).fournisseur('journal') as JournalSms,
+    routeurSms: app.get<RouteurSms>(FOURNISSEUR_SMS),
     associations: app.get(AssociationsService),
     owner,
     async fermer() {

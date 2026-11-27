@@ -1,31 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { definirStatut } from '@assoflow/contracts';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { createRequire } from 'node:module';
-import path from 'node:path';
 import type { TDocumentDefinitions } from 'pdfmake/interfaces.js';
 import { ErreurMetier } from '../../common/erreur-metier.js';
+import { genererPdf } from '../../common/pdf.js';
 import { detecterTypeImage } from '../../common/images.js';
 import { DatabaseService } from '../../infra/database.js';
 import { SecretsService } from '../../infra/secrets.js';
 import { STOCKAGE_OBJETS, type StockageObjets } from '../../infra/stockage/stockage-objets.js';
 import { MembresLecture } from './membres.lecture.js';
-
-interface Pdfmake {
-  addFonts(f: unknown): void;
-  setUrlAccessPolicy(f: (url: string) => boolean): void;
-  setLocalAccessPolicy(f: (chemin: string) => boolean): void;
-  createPdf(d: TDocumentDefinitions): { getBuffer(): Promise<Buffer> };
-}
-
-// pdfmake (CommonJS) : polices Roboto embarquées, aucun accès réseau, disque limité aux polices.
-const require = createRequire(import.meta.url);
-const pdfmake = require('pdfmake') as Pdfmake;
-const polices = require('pdfmake/fonts/Roboto') as { Roboto: { normal: string } };
-const dossierPolices = path.dirname(polices.Roboto.normal);
-pdfmake.addFonts(polices);
-pdfmake.setUrlAccessPolicy(() => false);
-pdfmake.setLocalAccessPolicy((chemin) => path.resolve(chemin).startsWith(dossierPolices));
 
 const PREFIXE_QR = 'assoflow:m:';
 
@@ -152,7 +135,7 @@ export class CarteMembreService {
       ],
     };
     return {
-      contenu: await pdfmake.createPdf(definition).getBuffer(),
+      contenu: await genererPdf(definition),
       nomFichier: `carte-${m.numero}.pdf`,
     };
   }

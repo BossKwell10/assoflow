@@ -25,6 +25,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Diffusion,
   ErreurResponse,
   GetReunionsParams,
   InterditResponse,
@@ -34,8 +35,7 @@ import type {
   PageReunion,
   PostReunionsIdConvoquerBody,
   Presence,
-  Reunion,
-  Tache
+  Reunion
 } from '../modeles';
 
 import { clientApi } from '../../client';
@@ -128,7 +128,7 @@ export const getGetReunionsUrl = (params?: GetReunionsParams,) => {
 }
 
 /**
- * Permission : `association.lire`. Exigences : RF-080.
+ * Permission : `association.lire`. Exigences : RF-080. Sprint 4 : liste minimale pour les convocations (E6-08), plus récentes d'abord, sans les réunions supprimées.
  * @summary Lister les réunions
  */
 export const getReunions = async (params?: GetReunionsParams, options?: Parameters<typeof clientApi>[1]): Promise<PageReunion> => {
@@ -176,7 +176,7 @@ export type GetReunionsQueryError = ErrorType<NonAuthentifieResponse | InterditR
 
 
 /**
- * Permission : `association.lire`. Exigences : RF-080.
+ * Permission : `association.lire`. Exigences : RF-080. Sprint 4 : liste minimale pour les convocations (E6-08), plus récentes d'abord, sans les réunions supprimées.
  * @summary Lister les réunions
  */
 export function useGetReunions<TData = Awaited<ReturnType<typeof getReunions>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -190,7 +190,7 @@ export function useGetReunions<TData = Awaited<ReturnType<typeof getReunions>>, 
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `association.lire`. Exigences : RF-080.
+ * Permission : `association.lire`. Exigences : RF-080. Sprint 4 : liste minimale pour les convocations (E6-08), plus récentes d'abord, sans les réunions supprimées.
  * @summary Lister les réunions
  */
 export function useGetReunions<TData = Awaited<ReturnType<typeof getReunions>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -204,7 +204,7 @@ export function useGetReunions<TData = Awaited<ReturnType<typeof getReunions>>, 
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `association.lire`. Exigences : RF-080.
+ * Permission : `association.lire`. Exigences : RF-080. Sprint 4 : liste minimale pour les convocations (E6-08), plus récentes d'abord, sans les réunions supprimées.
  * @summary Lister les réunions
  */
 export function useGetReunions<TData = Awaited<ReturnType<typeof getReunions>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -212,7 +212,7 @@ export function useGetReunions<TData = Awaited<ReturnType<typeof getReunions>>, 
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `association.lire`. Exigences : RF-080.
+ * Permission : `association.lire`. Exigences : RF-080. Sprint 4 : liste minimale pour les convocations (E6-08), plus récentes d'abord, sans les réunions supprimées.
  * @summary Lister les réunions
  */
 export function useGetReunions<TData = Awaited<ReturnType<typeof getReunions>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -241,7 +241,7 @@ export const getPostReunionsUrl = () => {
 }
 
 /**
- * Permission : `reunion.gerer`. Exigences : RF-080.
+ * Permission : `reunion.gerer`. Exigences : RF-080. Sprint 4 : planification simple (type, titre, début, lieu, ordre du jour) pour la convocation d'AG par SMS (E6-08) ; présences et PV en phase 2.
  * @summary Planifier une réunion
  */
 export const postReunions = async (reunion: NonReadonly<Reunion>, options?: Parameters<typeof clientApi>[1]): Promise<Reunion> => {
@@ -294,7 +294,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostReunionsMutationVariables = {data: NonReadonly<Reunion>}
 
     /**
- * Permission : `reunion.gerer`. Exigences : RF-080.
+ * Permission : `reunion.gerer`. Exigences : RF-080. Sprint 4 : planification simple (type, titre, début, lieu, ordre du jour) pour la convocation d'AG par SMS (E6-08) ; présences et PV en phase 2.
  * @summary Planifier une réunion
  */
 export const usePostReunions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -392,13 +392,13 @@ export const usePatchReunionsId = <TError = ErrorType<NonAuthentifieResponse | I
 }
 
 /**
- * Permission : `reunion.gerer`. Exigences : RF-063, RF-065.
+ * Permission : `reunion.gerer`. Exigences : RF-063, RF-065. Sprint 4 (E6-08) : canal `sms` seulement, modèle `convocation`, une convocation par membre et par réunion (un nouvel appel ne renvoie qu'aux membres pas encore convoqués). Membres actifs (`etat = actif`), relais par le chef de famille pour les membres sans téléphone (RF-060), `canal_prefere = aucun` exclu. Soumis au quota (docs/06 §4.3). Réunion annulée ou passée → 409 `ETAT_INCOMPATIBLE`.
  * @summary Envoyer les convocations
  */
 export const postReunionsIdConvoquer = async (id: string,
-    postReunionsIdConvoquerBody: PostReunionsIdConvoquerBody, options?: Parameters<typeof clientApi>[1]): Promise<Tache> => {
+    postReunionsIdConvoquerBody: PostReunionsIdConvoquerBody, options?: Parameters<typeof clientApi>[1]): Promise<Diffusion> => {
 
-  return clientApi<Tache>(getPostReunionsIdConvoquerUrl(id),
+  return clientApi<Diffusion>(getPostReunionsIdConvoquerUrl(id),
   {
     ...options,
     method: 'POST',
@@ -446,7 +446,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostReunionsIdConvoquerMutationVariables = {id: string;data: PostReunionsIdConvoquerBody}
 
     /**
- * Permission : `reunion.gerer`. Exigences : RF-063, RF-065.
+ * Permission : `reunion.gerer`. Exigences : RF-063, RF-065. Sprint 4 (E6-08) : canal `sms` seulement, modèle `convocation`, une convocation par membre et par réunion (un nouvel appel ne renvoie qu'aux membres pas encore convoqués). Membres actifs (`etat = actif`), relais par le chef de famille pour les membres sans téléphone (RF-060), `canal_prefere = aucun` exclu. Soumis au quota (docs/06 §4.3). Réunion annulée ou passée → 409 `ETAT_INCOMPATIBLE`.
  * @summary Envoyer les convocations
  */
 export const usePostReunionsIdConvoquer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,

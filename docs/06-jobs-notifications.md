@@ -112,3 +112,16 @@ montants avec espace des milliers (`25 000`), dates `JJ/MM/AAAA`.
 
 Cycle : `POST` → `202 { tacheId }` → la console interroge `GET /v1/taches/{id}` toutes les 2 s (ou notification) →
 `terminee` avec URL présignée valable 5 min ; fichier supprimé après 7 jours.
+
+## 8. Implémentation (sprint 4)
+
+| Sujet | Implémentation |
+| --- | --- |
+| Outbox | `NotificationsService.preparer()` insère la ligne dans la transaction métier ; `publier()` met en file après le commit (`notification-<id>-<essai>`, file selon la priorité). Dédoublonnage par `cle_dedup` (`recu:<paiement>`, `annulation:<paiement>`, `rappel:<membre>:<jour>`, `relance:<membre>:<jour>`, `convocation:<réunion>:<membre>`, `quota:<mois>:<seuil>:<user>`) ; un renvoi de reçu n'a pas de clé. |
+| Envoi | Réservation (`traitement_at`, reprise après 5 min), contrôle du quota (priorité > 1), envoi par le routeur **hors transaction**, puis `envoyee` + `consommation_sms`. Erreur transitoire avant la 5e tentative : la ligne reste `en_attente` et le job est relancé ; sinon `echec`. |
+| Reprise | `notifications.reprise` chaque minute : lignes `en_attente` de plus de 2 min, non réservées, moins de 5 tentatives. |
+| Fournisseurs | `RouteurSms` (ordre de `SMS_PROVIDERS`) : bascule sur le suivant à toute erreur ; disjoncteur (taux de remise < 90 % sur 1 h et ≥ 20 messages, fonction `app_remise_fournisseur_sms`, cache 1 min) qui place le fournisseur en dernier. Adaptateurs `agregateur_a` / `agregateur_b` (HTTP JSON + Bearer, format générique **à aligner sur l'API réelle des fournisseurs retenus**), `simulateur` / `simulateur_b` (recette, accusés simulés, panne simulable), `journal` (logs). Les OTP et invitations passent par le même routeur, en direct (hors tenant pour l'OTP). |
+| Accusés | `POST /v1/webhooks/sms/{fournisseur}` : jeton `X-Webhook-Token` ; mise à jour par `app_accuse_sms` (seule la notification de cet identifiant). |
+| Quotas | Mois civil GMT. `quotas.alerter` (toutes les heures) : alerte prioritaire `quota_sms` aux présidents à 80 % puis 100 %, une fois par seuil et par mois (`consommation_sms.alerte_*_at`). |
+| Modèles | Texte personnalisé par l'association > modèle global en base > défaut du code (`packages/contracts`, `MODELES_NOTIFICATION`). OTP et `quota_sms` non personnalisables. L'édition des modèles globaux (P12) arrive avec la console plateforme (sprint 7). |
+| Non livré | Métriques Prometheus `notifications_*` (sprint 8), WhatsApp et push (phase 2), expéditeur par fournisseur dans `parametres_plateforme` (variables d'environnement au MVP). |

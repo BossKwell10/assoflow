@@ -13,7 +13,7 @@ import { StockageLocal } from './stockage/stockage-local.js';
 import { STOCKAGE_OBJETS } from './stockage/stockage-objets.js';
 import { StockageS3 } from './stockage/stockage-s3.js';
 import { FOURNISSEUR_SMS } from './sms/fournisseur-sms.js';
-import { JournalSms } from './sms/journal-sms.js';
+import { creerRouteurSms } from './sms/fabrique-sms.js';
 
 /** Services transverses (configuration, base, secrets, cache, SMS, stockage, audit, permissions). */
 @Global()
@@ -36,12 +36,8 @@ import { JournalSms } from './sms/journal-sms.js';
     },
     {
       provide: FOURNISSEUR_SMS,
-      inject: [CONFIG],
-      useFactory: (config: Config) => {
-        const premier = config.SMS_PROVIDERS.split(',')[0]?.trim();
-        if (premier !== 'journal') throw new Error(`Fournisseur SMS non pris en charge : ${premier}`);
-        return new JournalSms(config.NODE_ENV === 'test');
-      },
+      inject: [CONFIG, DatabaseService],
+      useFactory: (config: Config, db: DatabaseService) => creerRouteurSms(config, db),
     },
     {
       provide: STOCKAGE_OBJETS,

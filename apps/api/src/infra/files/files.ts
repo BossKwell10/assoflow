@@ -9,11 +9,12 @@ import { Queue, Worker, type Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import { CONFIG, type Config } from '../../config.js';
 
-/**
- * Files BullMQ (docs/06 §2). Chaque file a un nom, une concurrence et une politique de reprise.
- * Les notifications (S4) s'ajouteront ici.
- */
+/** Files BullMQ (docs/06 §2). Chaque file a un nom, une concurrence et une politique de reprise. */
 export const DEFINITIONS_FILES = {
+  /** OTP, reçus de paiement, décisions : 5 essais, 10 s puis délai doublé. */
+  'notifications-prioritaires': { concurrence: 20, tentatives: 5, delaiMs: 10_000 },
+  /** Rappels, convocations, alertes : 5 essais, 1 min puis délai doublé. */
+  notifications: { concurrence: 10, tentatives: 5, delaiMs: 60_000 },
   rapports: { concurrence: 2, tentatives: 2, delaiMs: 60_000 },
   maintenance: { concurrence: 1, tentatives: 3, delaiMs: 5 * 60_000 },
 } as const;

@@ -30,6 +30,7 @@ import type {
   CampagneCreation,
   CampagneMaj,
   ConflitResponse,
+  Diffusion,
   Echeance,
   EcheanceMaj,
   ErreurResponse,
@@ -42,6 +43,7 @@ import type {
   Motif,
   NonAuthentifieResponse,
   NonTrouveResponse,
+  Notification,
   PageCampagne,
   PageEcheance,
   PageEcheancier,
@@ -50,10 +52,10 @@ import type {
   PaiementCreation,
   PostCampagnesIdMembres200,
   PostCampagnesIdMembresBody,
+  PostEcheancesRelancerBody,
   PreconditionEchoueeResponse,
   PreconditionRequiseResponse,
-  StatistiquesCampagne,
-  Tache
+  StatistiquesCampagne
 } from '../modeles';
 
 import { clientApi } from '../../client';
@@ -1339,6 +1341,81 @@ export const usePostEcheancesIdExonerer = <TError = ErrorType<NonAuthentifieResp
       > => {
       return useMutation(getPostEcheancesIdExonererMutationOptions(options), queryClient);
     }
+    export const getPostEcheancesRelancerUrl = () => {
+
+
+
+
+  return `/echeances/relancer`
+}
+
+/**
+ * Permission : `cotisation.gerer`. Écran A10 (action de masse « Relancer »). Un SMS `rappel_retard` par membre (montants regroupés, RG-COT-050), au plus une relance manuelle par membre et par jour. Échéances non soldées et échues uniquement ; membres suspendus, désactivés ou `canal_prefere = aucun` exclus. Soumis au quota (docs/06 §4.3).
+ * @summary Relancer les membres d'échéances en retard
+ */
+export const postEcheancesRelancer = async (postEcheancesRelancerBody: PostEcheancesRelancerBody, options?: Parameters<typeof clientApi>[1]): Promise<Diffusion> => {
+
+  return clientApi<Diffusion>(getPostEcheancesRelancerUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
+    body: JSON.stringify(postEcheancesRelancerBody)
+  }
+);}
+
+
+
+
+
+export const getPostEcheancesRelancerMutationKey = () => ['postEcheancesRelancer'] as const;
+
+export const getPostEcheancesRelancerMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postEcheancesRelancer>>, TError,PostEcheancesRelancerMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
+): UseMutationOptions<Awaited<ReturnType<typeof postEcheancesRelancer>>, TError,PostEcheancesRelancerMutationVariables, TContext> => {
+
+const mutationKey = getPostEcheancesRelancerMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postEcheancesRelancer>>, PostEcheancesRelancerMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  postEcheancesRelancer(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostEcheancesRelancerMutationResult = NonNullable<Awaited<ReturnType<typeof postEcheancesRelancer>>>
+    export type PostEcheancesRelancerMutationBody = PostEcheancesRelancerBody
+    export type PostEcheancesRelancerMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>
+    export type PostEcheancesRelancerMutationVariables = {data: PostEcheancesRelancerBody}
+
+    /**
+ * Permission : `cotisation.gerer`. Écran A10 (action de masse « Relancer »). Un SMS `rappel_retard` par membre (montants regroupés, RG-COT-050), au plus une relance manuelle par membre et par jour. Échéances non soldées et échues uniquement ; membres suspendus, désactivés ou `canal_prefere = aucun` exclus. Soumis au quota (docs/06 §4.3).
+ * @summary Relancer les membres d'échéances en retard
+ */
+export const usePostEcheancesRelancer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postEcheancesRelancer>>, TError,PostEcheancesRelancerMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postEcheancesRelancer>>,
+        TError,
+        PostEcheancesRelancerMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPostEcheancesRelancerMutationOptions(options), queryClient);
+    }
     export const getGetPaiementsUrl = (params?: GetPaiementsParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -1468,7 +1545,7 @@ export const getPostPaiementsUrl = () => {
 }
 
 /**
- * Permission : `paiement.enregistrer`. Exigences : RF-032, RF-033, RF-034, RF-038. Même traitement que le push de sync : imputation, mouvement, numéro, SMS. Rejoué avec le même id → 200 et le paiement existant.
+ * Permission : `paiement.enregistrer`. Exigences : RF-032, RF-033, RF-034, RF-038. Même traitement que le push de sync : imputation (RG-COT-020, RG-COT-021), mouvement d'entrée (RG-COT-032), numéro de reçu (RG-NUM-001), retour dormant → actif (RG-MBR-005), SMS de reçu mis en file après commit (RF-034). Rejoué avec le même id et le même corps → 200 et le paiement existant ; corps différent → 409 CONFLIT_IDEMPOTENCE. Erreurs : 422 `CONFIRMATION_REQUISE` (montant > 500 000 sans `confirmationMontantEleve`), `EXERCICE_FERME`, `REFERENCE_INVALIDE` (membre, famille, compte ou campagne), `VALIDATION` ; 409 `ETAT_INCOMPATIBLE` (membre désactivé ou anonymisé, famille sans membre actif).
  * @summary Enregistrer un paiement (mode connecté)
  */
 export const postPaiements = async (paiementCreation: PaiementCreation, options?: Parameters<typeof clientApi>[1]): Promise<Paiement> => {
@@ -1521,7 +1598,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostPaiementsMutationVariables = {data: PaiementCreation}
 
     /**
- * Permission : `paiement.enregistrer`. Exigences : RF-032, RF-033, RF-034, RF-038. Même traitement que le push de sync : imputation, mouvement, numéro, SMS. Rejoué avec le même id → 200 et le paiement existant.
+ * Permission : `paiement.enregistrer`. Exigences : RF-032, RF-033, RF-034, RF-038. Même traitement que le push de sync : imputation (RG-COT-020, RG-COT-021), mouvement d'entrée (RG-COT-032), numéro de reçu (RG-NUM-001), retour dormant → actif (RG-MBR-005), SMS de reçu mis en file après commit (RF-034). Rejoué avec le même id et le même corps → 200 et le paiement existant ; corps différent → 409 CONFLIT_IDEMPOTENCE. Erreurs : 422 `CONFIRMATION_REQUISE` (montant > 500 000 sans `confirmationMontantEleve`), `EXERCICE_FERME`, `REFERENCE_INVALIDE` (membre, famille, compte ou campagne), `VALIDATION` ; 409 `ETAT_INCOMPATIBLE` (membre désactivé ou anonymisé, famille sans membre actif).
  * @summary Enregistrer un paiement (mode connecté)
  */
 export const usePostPaiements = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
@@ -1656,7 +1733,7 @@ export const getPostPaiementsIdAnnulerUrl = (id: string,) => {
 }
 
 /**
- * Permission : `paiement.annuler`. RG-COT-040, RG-COT-041. Renvoie la ligne d'annulation.
+ * Permission : `paiement.annuler`. RG-COT-040, RG-COT-041. Renvoie la ligne d'annulation (nouveau numéro de reçu, contre-imputations, mouvement de sortie daté du jour, SMS d'information). Sans `paiement.annuler_tout`, seuls ses propres paiements de moins de 48 h (403 `PERMISSION_REFUSEE` sinon). 409 `ETAT_INCOMPATIBLE` si déjà annulé ou si la ligne est elle-même une annulation ; 422 `EXERCICE_FERME` si l'exercice du paiement ou celui du jour est clôturé ; 422 `SOLDE_INSUFFISANT` si le compte ne couvre pas la sortie (RG-TRE-003).
  * @summary Annuler un paiement (contre-écriture)
  */
 export const postPaiementsIdAnnuler = async (id: string,
@@ -1710,7 +1787,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostPaiementsIdAnnulerMutationVariables = {id: string;data: Motif}
 
     /**
- * Permission : `paiement.annuler`. RG-COT-040, RG-COT-041. Renvoie la ligne d'annulation.
+ * Permission : `paiement.annuler`. RG-COT-040, RG-COT-041. Renvoie la ligne d'annulation (nouveau numéro de reçu, contre-imputations, mouvement de sortie daté du jour, SMS d'information). Sans `paiement.annuler_tout`, seuls ses propres paiements de moins de 48 h (403 `PERMISSION_REFUSEE` sinon). 409 `ETAT_INCOMPATIBLE` si déjà annulé ou si la ligne est elle-même une annulation ; 422 `EXERCICE_FERME` si l'exercice du paiement ou celui du jour est clôturé ; 422 `SOLDE_INSUFFISANT` si le compte ne couvre pas la sortie (RG-TRE-003).
  * @summary Annuler un paiement (contre-écriture)
  */
 export const usePostPaiementsIdAnnuler = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
@@ -1845,12 +1922,12 @@ export const getPostPaiementsIdRenvoyerRecuUrl = (id: string,) => {
 }
 
 /**
- * Permission : `paiement.enregistrer`. Exigences : RF-034.
+ * Permission : `paiement.enregistrer`. Exigences : RF-034. Nouvelle notification prioritaire (reçu ou avis d'annulation selon la ligne), envoyée après commit ; jamais bloquée par le quota (docs/06 §4.3). `422 CONTACT_REQUIS` si ni le membre ni son chef de famille n'a de téléphone, ou si le membre refuse les messages (`canal_prefere = aucun`).
  * @summary Renvoyer le reçu par SMS/WhatsApp
  */
-export const postPaiementsIdRenvoyerRecu = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Tache> => {
+export const postPaiementsIdRenvoyerRecu = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Notification> => {
 
-  return clientApi<Tache>(getPostPaiementsIdRenvoyerRecuUrl(id),
+  return clientApi<Notification>(getPostPaiementsIdRenvoyerRecuUrl(id),
   {
     ...options,
     method: 'POST'
@@ -1898,7 +1975,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostPaiementsIdRenvoyerRecuMutationVariables = {id: string}
 
     /**
- * Permission : `paiement.enregistrer`. Exigences : RF-034.
+ * Permission : `paiement.enregistrer`. Exigences : RF-034. Nouvelle notification prioritaire (reçu ou avis d'annulation selon la ligne), envoyée après commit ; jamais bloquée par le quota (docs/06 §4.3). `422 CONTACT_REQUIS` si ni le membre ni son chef de famille n'a de téléphone, ou si le membre refuse les messages (`canal_prefere = aucun`).
  * @summary Renvoyer le reçu par SMS/WhatsApp
  */
 export const usePostPaiementsIdRenvoyerRecu = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,

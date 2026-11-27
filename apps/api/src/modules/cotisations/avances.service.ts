@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Tx } from '../../infra/database.js';
 
 /**
- * Verrou transactionnel des imputations d'un membre : paiements (S4), avances et annulations d'un même membre
+ * Verrou transactionnel des imputations d'un membre : paiements, avances et annulations d'un même membre
  * sont sérialisés, pour que deux ventilations simultanées ne soldent pas deux fois la même échéance.
  */
 export async function verrouillerImputationsMembre(tx: Tx, membreIds: string[]): Promise<void> {
@@ -26,6 +26,8 @@ export class AvancesService {
         `SELECT membre_id, paiement_id, sum(montant)::bigint AS dispo
            FROM imputations_paiement
           WHERE echeance_id IS NULL AND membre_id = ANY($1::uuid[])
+            -- Avance d'un paiement annulé : déjà contre-passée par l'annulation (RG-COT-040).
+            AND NOT EXISTS (SELECT 1 FROM paiements a WHERE a.annule_paiement_id = imputations_paiement.paiement_id)
           GROUP BY membre_id, paiement_id
          HAVING sum(montant) > 0
           ORDER BY membre_id, min(created_at), paiement_id`,

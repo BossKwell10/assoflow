@@ -6,12 +6,15 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CurseurParameter } from './curseurParameter';
+import type { GetNotificationsCanal } from './getNotificationsCanal';
+import type { GetNotificationsStatut } from './getNotificationsStatut';
 import type { LimiteParameter } from './limiteParameter';
 
 export type GetNotificationsParams = {
   membreId?: string;
-  statut?: string;
-  canal?: string;
+  statut?: GetNotificationsStatut;
+  canal?: GetNotificationsCanal;
+  modele?: string;
   /**
    * @minimum 1
    * @maximum 200

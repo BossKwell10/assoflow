@@ -8,9 +8,16 @@
 
 export interface Imputation {
   /** @nullable */
-  echeanceId?: string | null;
-  membreId?: string;
+  echeanceId: string | null;
+  membreId: string;
   /** @nullable */
-  libellePeriode?: string | null;
-  montant?: number;
+  libellePeriode: string | null;
+  /** @nullable */
+  campagneId: string | null;
+  /** @nullable */
+  campagneLibelle: string | null;
+  /** @nullable */
+  dateEcheance: string | null;
+  /** Net imputé par ce paiement (avance si `echeanceId` est nul ; négatif sur une annulation) */
+  montant: number;
 }

@@ -1,4 +1,4 @@
-import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { AuthRequete } from '../../common/auth/auth-requete.js';
 import { introuvable } from '../../common/base-de-donnees.js';
@@ -6,6 +6,7 @@ import { contexteStorage, type ContexteRequete } from '../../common/contexte.js'
 import { ErreurMetier } from '../../common/erreur-metier.js';
 import { DatabaseService, type Tx } from '../../infra/database.js';
 import { FilesService } from '../../infra/files/files.js';
+import { STOCKAGE_OBJETS, type StockageObjets } from '../../infra/stockage/stockage-objets.js';
 
 export type StatutTache = 'en_attente' | 'en_cours' | 'terminee' | 'echec';
 
@@ -84,6 +85,7 @@ export class TachesService implements OnModuleInit {
   constructor(
     private readonly db: DatabaseService,
     private readonly files: FilesService,
+    @Inject(STOCKAGE_OBJETS) private readonly stockage: StockageObjets,
   ) {}
 
   onModuleInit(): void {
@@ -126,9 +128,18 @@ export class TachesService implements OnModuleInit {
     return versDto(ligne);
   }
 
-  /** Tâche du demandeur courant (une tâche d'un autre utilisateur est introuvable). */
-  lire(auth: AuthRequete, id: string): Promise<TacheDto> {
-    return this.db.tx(async (tx) => versDto(await this.ligne(tx, auth.userId, id)));
+  /**
+   * Tâche du demandeur courant (une tâche d'un autre utilisateur est introuvable). Un fichier produit
+   * (`resultat._cle`) est exposé par une URL de lecture de 5 min, recalculée à chaque appel (docs/06 §7).
+   */
+  async lire(auth: AuthRequete, id: string): Promise<TacheDto> {
+    const ligne = await this.db.tx((tx) => this.ligne(tx, auth.userId, id));
+    const dto = versDto(ligne);
+    const cle = ligne.resultat?._cle;
+    if (ligne.statut === 'terminee' && typeof cle === 'string' && dto.resultat) {
+      dto.resultat = { ...dto.resultat, url: await this.stockage.urlLecture(cle) };
+    }
+    return dto;
   }
 
   /** Ligne brute (paramètres et résultat internes compris), pour les modules propriétaires du type. */

@@ -468,7 +468,7 @@ export const usePostAnnoncesIdPublier = <TError = ErrorType<NonAuthentifieRespon
 }
 
 /**
- * Permission : `communication.modeles`. Exigences : RF-ADM-023.
+ * Permission : `communication.modeles`. Exigences : RF-ADM-023. Modèles globaux (docs/06 §5) fusionnés avec les textes personnalisés de l'association (`personnalise = true`).
  * @summary Modèles de messages
  */
 export const getModelesNotification = async ( options?: Parameters<typeof clientApi>[1]): Promise<ModeleNotification[]> => {
@@ -516,7 +516,7 @@ export type GetModelesNotificationQueryError = ErrorType<NonAuthentifieResponse 
 
 
 /**
- * Permission : `communication.modeles`. Exigences : RF-ADM-023.
+ * Permission : `communication.modeles`. Exigences : RF-ADM-023. Modèles globaux (docs/06 §5) fusionnés avec les textes personnalisés de l'association (`personnalise = true`).
  * @summary Modèles de messages
  */
 export function useGetModelesNotification<TData = Awaited<ReturnType<typeof getModelesNotification>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -530,7 +530,7 @@ export function useGetModelesNotification<TData = Awaited<ReturnType<typeof getM
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `communication.modeles`. Exigences : RF-ADM-023.
+ * Permission : `communication.modeles`. Exigences : RF-ADM-023. Modèles globaux (docs/06 §5) fusionnés avec les textes personnalisés de l'association (`personnalise = true`).
  * @summary Modèles de messages
  */
 export function useGetModelesNotification<TData = Awaited<ReturnType<typeof getModelesNotification>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -544,7 +544,7 @@ export function useGetModelesNotification<TData = Awaited<ReturnType<typeof getM
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `communication.modeles`. Exigences : RF-ADM-023.
+ * Permission : `communication.modeles`. Exigences : RF-ADM-023. Modèles globaux (docs/06 §5) fusionnés avec les textes personnalisés de l'association (`personnalise = true`).
  * @summary Modèles de messages
  */
 export function useGetModelesNotification<TData = Awaited<ReturnType<typeof getModelesNotification>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -552,7 +552,7 @@ export function useGetModelesNotification<TData = Awaited<ReturnType<typeof getM
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `communication.modeles`. Exigences : RF-ADM-023.
+ * Permission : `communication.modeles`. Exigences : RF-ADM-023. Modèles globaux (docs/06 §5) fusionnés avec les textes personnalisés de l'association (`personnalise = true`).
  * @summary Modèles de messages
  */
 export function useGetModelesNotification<TData = Awaited<ReturnType<typeof getModelesNotification>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -582,7 +582,7 @@ export const getPutModelesNotificationCodeCanalUrl = (code: string,
 }
 
 /**
- * Permission : `communication.modeles`.
+ * Permission : `communication.modeles`. Seul le texte est personnalisable (RF-SUP-042) : une variable `{{…}}` absente de la liste du modèle → 422 `VALIDATION` (`VARIABLE_INCONNUE`). 404 si le code ou le canal n'existe pas en global.
  * @summary Personnaliser un modèle
  */
 export const putModelesNotificationCodeCanal = async (code: string,
@@ -637,7 +637,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PutModelesNotificationCodeCanalMutationVariables = {code: string;canal: string;data: NonReadonly<ModeleNotification>}
 
     /**
- * Permission : `communication.modeles`.
+ * Permission : `communication.modeles`. Seul le texte est personnalisable (RF-SUP-042) : une variable `{{…}}` absente de la liste du modèle → 422 `VALIDATION` (`VARIABLE_INCONNUE`). 404 si le code ou le canal n'existe pas en global.
  * @summary Personnaliser un modèle
  */
 export const usePutModelesNotificationCodeCanal = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
@@ -743,7 +743,7 @@ export const useDeleteModelesNotificationCodeCanal = <TError = ErrorType<NonAuth
 }
 
 /**
- * Permission : `communication.annoncer`.
+ * Permission : `communication.annoncer`. Historique des envois (A22), plus récents d'abord ; filtre `modele` sur le code de modèle. Destinataires masqués (docs/04 §6).
  * @summary Historique des envois
  */
 export const getNotifications = async (params?: GetNotificationsParams, options?: Parameters<typeof clientApi>[1]): Promise<PageNotification> => {
@@ -791,7 +791,7 @@ export type GetNotificationsQueryError = ErrorType<NonAuthentifieResponse | Inte
 
 
 /**
- * Permission : `communication.annoncer`.
+ * Permission : `communication.annoncer`. Historique des envois (A22), plus récents d'abord ; filtre `modele` sur le code de modèle. Destinataires masqués (docs/04 §6).
  * @summary Historique des envois
  */
 export function useGetNotifications<TData = Awaited<ReturnType<typeof getNotifications>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -805,7 +805,7 @@ export function useGetNotifications<TData = Awaited<ReturnType<typeof getNotific
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `communication.annoncer`.
+ * Permission : `communication.annoncer`. Historique des envois (A22), plus récents d'abord ; filtre `modele` sur le code de modèle. Destinataires masqués (docs/04 §6).
  * @summary Historique des envois
  */
 export function useGetNotifications<TData = Awaited<ReturnType<typeof getNotifications>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -819,7 +819,7 @@ export function useGetNotifications<TData = Awaited<ReturnType<typeof getNotific
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `communication.annoncer`.
+ * Permission : `communication.annoncer`. Historique des envois (A22), plus récents d'abord ; filtre `modele` sur le code de modèle. Destinataires masqués (docs/04 §6).
  * @summary Historique des envois
  */
 export function useGetNotifications<TData = Awaited<ReturnType<typeof getNotifications>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -827,7 +827,7 @@ export function useGetNotifications<TData = Awaited<ReturnType<typeof getNotific
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `communication.annoncer`.
+ * Permission : `communication.annoncer`. Historique des envois (A22), plus récents d'abord ; filtre `modele` sur le code de modèle. Destinataires masqués (docs/04 §6).
  * @summary Historique des envois
  */
 export function useGetNotifications<TData = Awaited<ReturnType<typeof getNotifications>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -856,7 +856,7 @@ export const getGetSmsConsommationUrl = () => {
 }
 
 /**
- * Permission : `association.lire`. Exigences : RF-SUP-031.
+ * Permission : `association.lire`. Exigences : RF-SUP-031. Mois civil en cours (GMT) ; OTP et reçus comptés mais jamais bloqués (docs/06 §4.3).
  * @summary Consommation SMS du mois
  */
 export const getSmsConsommation = async ( options?: Parameters<typeof clientApi>[1]): Promise<ConsommationSms> => {
@@ -904,7 +904,7 @@ export type GetSmsConsommationQueryError = ErrorType<NonAuthentifieResponse | In
 
 
 /**
- * Permission : `association.lire`. Exigences : RF-SUP-031.
+ * Permission : `association.lire`. Exigences : RF-SUP-031. Mois civil en cours (GMT) ; OTP et reçus comptés mais jamais bloqués (docs/06 §4.3).
  * @summary Consommation SMS du mois
  */
 export function useGetSmsConsommation<TData = Awaited<ReturnType<typeof getSmsConsommation>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -918,7 +918,7 @@ export function useGetSmsConsommation<TData = Awaited<ReturnType<typeof getSmsCo
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `association.lire`. Exigences : RF-SUP-031.
+ * Permission : `association.lire`. Exigences : RF-SUP-031. Mois civil en cours (GMT) ; OTP et reçus comptés mais jamais bloqués (docs/06 §4.3).
  * @summary Consommation SMS du mois
  */
 export function useGetSmsConsommation<TData = Awaited<ReturnType<typeof getSmsConsommation>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -932,7 +932,7 @@ export function useGetSmsConsommation<TData = Awaited<ReturnType<typeof getSmsCo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `association.lire`. Exigences : RF-SUP-031.
+ * Permission : `association.lire`. Exigences : RF-SUP-031. Mois civil en cours (GMT) ; OTP et reçus comptés mais jamais bloqués (docs/06 §4.3).
  * @summary Consommation SMS du mois
  */
 export function useGetSmsConsommation<TData = Awaited<ReturnType<typeof getSmsConsommation>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -940,7 +940,7 @@ export function useGetSmsConsommation<TData = Awaited<ReturnType<typeof getSmsCo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `association.lire`. Exigences : RF-SUP-031.
+ * Permission : `association.lire`. Exigences : RF-SUP-031. Mois civil en cours (GMT) ; OTP et reçus comptés mais jamais bloqués (docs/06 §4.3).
  * @summary Consommation SMS du mois
  */
 export function useGetSmsConsommation<TData = Awaited<ReturnType<typeof getSmsConsommation>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
