@@ -9,17 +9,19 @@ import type { TacheResultat } from './tacheResultat';
 import type { TacheStatut } from './tacheStatut';
 
 export interface Tache {
-  id?: string;
-  type?: string;
-  statut?: TacheStatut;
+  id: string;
+  type: string;
+  statut: TacheStatut;
   /**
      * @minimum 0
      * @maximum 100
      */
-  progression?: number;
+  progression: number;
   /** @nullable */
-  erreur?: string | null;
+  erreur: string | null;
   /** @nullable */
-  resultat?: TacheResultat;
-  createdAt?: string;
+  resultat: TacheResultat;
+  createdAt: string;
+  /** @nullable */
+  termineAt: string | null;
 }

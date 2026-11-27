@@ -7,6 +7,10 @@
  */
 
 export type PostCampagnesIdMembresBody = {
+  /**
+     * @minItems 1
+     * @maxItems 500
+     */
   membreIds: string[];
   rattrapage?: boolean;
 };

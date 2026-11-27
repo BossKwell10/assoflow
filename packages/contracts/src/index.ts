@@ -8,3 +8,4 @@ export * from './acces.js';
 export * from './uuid.js';
 export * from './membres.js';
 export * from './statuts.js';
+export * from './cotisations.js';

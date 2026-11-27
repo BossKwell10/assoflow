@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { DatabaseService, type Tx } from '../../infra/database.js';
+import { FilesService } from '../../infra/files/files.js';
 import { AuditService } from '../audit/audit.service.js';
 
 /**
@@ -7,15 +8,49 @@ import { AuditService } from '../audit/audit.service.js';
  * aucun paiement depuis `jours_retard_dormant` jours (180 par défaut) ; retour `dormant → actif` au premier
  * paiement. `honoraire` et `bienfaiteur` ne changent que manuellement.
  *
- * Sprint 2 : fonctions de service seulement. Le job nocturne (BullMQ, docs/06) appellera `passerEnDormance()`
- * pour chaque association active ; le module paiements appellera `reactiverApresPaiement()` (sprint 4).
+ * Job nocturne `membres.dormance` (02:00 GMT, file `maintenance`, docs/06 §3) : `passerEnDormance()` pour chaque
+ * association active. Le module paiements appelle `reactiverApresPaiement()` (sprint 4).
  */
 @Injectable()
-export class DormanceService {
+export class DormanceService implements OnModuleInit {
+  private readonly logger = new Logger('Dormance');
+
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly files: FilesService,
   ) {}
+
+  onModuleInit(): void {
+    this.files.planifier({
+      nom: 'membres.dormance',
+      cron: '0 2 * * *',
+      executer: () => this.executerPourToutes(),
+    });
+  }
+
+  /** Toutes les associations actives, chacune dans sa propre transaction et son contexte RLS. */
+  async executerPourToutes(): Promise<{ associations: number; membres: number }> {
+    const associations = await this.db.tx(
+      async (tx) =>
+        (await tx.query<{ id: string }>(`SELECT id FROM associations WHERE statut = 'active' ORDER BY id`))
+          .rows,
+      // Lecture de la liste des tenants seulement : rôle plateforme du job système.
+      { requestId: 'job-dormance', rolePlateforme: 'super_admin' },
+    );
+    let membres = 0;
+    for (const a of associations) {
+      try {
+        membres += (await this.passerEnDormance(a.id)).membres.length;
+      } catch (e) {
+        this.logger.error(`Dormance de l'association ${a.id} en échec : ${(e as Error).message}`);
+      }
+    }
+    this.logger.log(
+      `Dormance : ${membres} membre(s) passé(s) dormants dans ${associations.length} association(s)`,
+    );
+    return { associations: associations.length, membres };
+  }
 
   /**
    * Sans paiement imputé, la référence est la date d'adhésion : un nouveau membre en retard n'est pas

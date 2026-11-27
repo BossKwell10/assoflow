@@ -36,4 +36,11 @@ export interface Campagne {
   readonly statut?: CampagneStatut;
   /** @nullable */
   readonly activeeAt?: string | null;
+  readonly nombrePeriodes?: number;
+  /**
+     * RG-RAP-002 (échéances échues) ; `null` tant que rien n'est échu
+     * @nullable
+     */
+  readonly tauxRecouvrement?: number | null;
+  readonly etag?: string;
 }

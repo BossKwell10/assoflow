@@ -35,6 +35,14 @@ export class StockageLocal implements StockageObjets {
     await rm(this.chemin(cle), { force: true });
   }
 
+  async contenu(cle: string): Promise<Buffer | null> {
+    try {
+      return await readFile(this.chemin(cle));
+    } catch {
+      return null;
+    }
+  }
+
   async urlLecture(cle: string, maintenant = Date.now()): Promise<string> {
     const exp = Math.floor(maintenant / 1000) + DUREE_URL_LECTURE_S;
     const jeton = Buffer.from(verifierCle(cle)).toString('base64url');

@@ -153,8 +153,8 @@ export function ListeMembres() {
             </Button>
           )}
           <Si permission="membre.importer">
-            <Button variant="default" disabled>
-              {t('membres.importerBientot')}
+            <Button component={Link} to="/membres/import" variant="default">
+              {t('membres.importer')}
             </Button>
           </Si>
           <Si permission="membre.creer">

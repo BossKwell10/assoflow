@@ -25,10 +25,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ApercuCampagne,
   Campagne,
+  CampagneCreation,
+  CampagneMaj,
+  ConflitResponse,
   Echeance,
   EcheanceMaj,
   ErreurResponse,
+  GetCampagnesIdEcheancierParams,
   GetCampagnesParams,
   GetEcheancesParams,
   GetPaiementsParams,
@@ -39,44 +44,20 @@ import type {
   NonTrouveResponse,
   PageCampagne,
   PageEcheance,
+  PageEcheancier,
   PagePaiement,
   Paiement,
   PaiementCreation,
   PostCampagnesIdMembres200,
   PostCampagnesIdMembresBody,
+  PreconditionEchoueeResponse,
+  PreconditionRequiseResponse,
   StatistiquesCampagne,
   Tache
 } from '../modeles';
 
 import { clientApi } from '../../client';
 import type { ErrorType } from '../../client';
-
-// https://stackoverflow.com/questions/49579094/typescript-conditional-types-filter-out-readonly-properties-pick-only-requir/49579497#49579497
-type IfEquals<X, Y, A = X, B = never> = (<T>() => T extends X ? 1 : 2) extends <
-T,
->() => T extends Y ? 1 : 2
-? A
-: B;
-
-type WritableKeys<T> = {
-[P in keyof T]-?: IfEquals<
-  { [Q in P]: T[P] },
-  { -readonly [Q in P]: T[P] },
-  P
->;
-}[keyof T];
-
-type UnionToIntersection<U> =
-  (U extends any ? (k: U)=>void : never) extends ((k: infer I)=>void) ? I : never;
-type DistributeReadOnlyOverUnions<T> = T extends any ? NonReadonly<T> : never;
-
-type Writable<T> = Pick<T, WritableKeys<T>>;
-type NonReadonly<T> = [T] extends [UnionToIntersection<T>] ? {
-  [P in keyof Writable<T>]: T[P] extends object
-    ? NonReadonly<NonNullable<T[P]>>
-    : T[P];
-} : DistributeReadOnlyOverUnions<T>;
-
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -138,7 +119,7 @@ export const getGetCampagnesUrl = (params?: GetCampagnesParams,) => {
 }
 
 /**
- * Permission : `cotisation.lire`. Exigences : RF-030.
+ * Permission : `cotisation.lire`. Exigences : RF-030. Tri : date de début décroissante.
  * @summary Lister les campagnes
  */
 export const getCampagnes = async (params?: GetCampagnesParams, options?: Parameters<typeof clientApi>[1]): Promise<PageCampagne> => {
@@ -186,7 +167,7 @@ export type GetCampagnesQueryError = ErrorType<NonAuthentifieResponse | Interdit
 
 
 /**
- * Permission : `cotisation.lire`. Exigences : RF-030.
+ * Permission : `cotisation.lire`. Exigences : RF-030. Tri : date de début décroissante.
  * @summary Lister les campagnes
  */
 export function useGetCampagnes<TData = Awaited<ReturnType<typeof getCampagnes>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -200,7 +181,7 @@ export function useGetCampagnes<TData = Awaited<ReturnType<typeof getCampagnes>>
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `cotisation.lire`. Exigences : RF-030.
+ * Permission : `cotisation.lire`. Exigences : RF-030. Tri : date de début décroissante.
  * @summary Lister les campagnes
  */
 export function useGetCampagnes<TData = Awaited<ReturnType<typeof getCampagnes>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -214,7 +195,7 @@ export function useGetCampagnes<TData = Awaited<ReturnType<typeof getCampagnes>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `cotisation.lire`. Exigences : RF-030.
+ * Permission : `cotisation.lire`. Exigences : RF-030. Tri : date de début décroissante.
  * @summary Lister les campagnes
  */
 export function useGetCampagnes<TData = Awaited<ReturnType<typeof getCampagnes>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -222,7 +203,7 @@ export function useGetCampagnes<TData = Awaited<ReturnType<typeof getCampagnes>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `cotisation.lire`. Exigences : RF-030.
+ * Permission : `cotisation.lire`. Exigences : RF-030. Tri : date de début décroissante.
  * @summary Lister les campagnes
  */
 export function useGetCampagnes<TData = Awaited<ReturnType<typeof getCampagnes>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -251,17 +232,17 @@ export const getPostCampagnesUrl = () => {
 }
 
 /**
- * Permission : `cotisation.gerer`. Exigences : RF-030, RF-037.
+ * Permission : `cotisation.gerer`. Exigences : RF-030, RF-037. RG-COT-001 : brouillon, rien n'est généré. Dates dans l'exercice (`422 HORS_EXERCICE`), exercice ouvert (`422 EXERCICE_FERME`), motif obligatoire pour une campagne exceptionnelle.
  * @summary Créer une campagne (brouillon)
  */
-export const postCampagnes = async (campagne: NonReadonly<Campagne>, options?: Parameters<typeof clientApi>[1]): Promise<Campagne> => {
+export const postCampagnes = async (campagneCreation: CampagneCreation, options?: Parameters<typeof clientApi>[1]): Promise<Campagne> => {
 
   return clientApi<Campagne>(getPostCampagnesUrl(),
   {
     ...options,
     method: 'POST',
     headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
-    body: JSON.stringify(campagne)
+    body: JSON.stringify(campagneCreation)
   }
 );}
 
@@ -271,7 +252,7 @@ export const postCampagnes = async (campagne: NonReadonly<Campagne>, options?: P
 
 export const getPostCampagnesMutationKey = () => ['postCampagnes'] as const;
 
-export const getPostCampagnesMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+export const getPostCampagnesMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCampagnes>>, TError,PostCampagnesMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postCampagnes>>, TError,PostCampagnesMutationVariables, TContext> => {
 
@@ -299,15 +280,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostCampagnesMutationResult = NonNullable<Awaited<ReturnType<typeof postCampagnes>>>
-    export type PostCampagnesMutationBody = NonReadonly<Campagne>
-    export type PostCampagnesMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>
-    export type PostCampagnesMutationVariables = {data: NonReadonly<Campagne>}
+    export type PostCampagnesMutationBody = CampagneCreation
+    export type PostCampagnesMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | ConflitResponse | InvalideResponse | ErreurResponse>
+    export type PostCampagnesMutationVariables = {data: CampagneCreation}
 
     /**
- * Permission : `cotisation.gerer`. Exigences : RF-030, RF-037.
+ * Permission : `cotisation.gerer`. Exigences : RF-030, RF-037. RG-COT-001 : brouillon, rien n'est généré. Dates dans l'exercice (`422 HORS_EXERCICE`), exercice ouvert (`422 EXERCICE_FERME`), motif obligatoire pour une campagne exceptionnelle.
  * @summary Créer une campagne (brouillon)
  */
-export const usePostCampagnes = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | InvalideResponse | ErreurResponse>,
+export const usePostCampagnes = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCampagnes>>, TError,PostCampagnesMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postCampagnes>>,
@@ -439,18 +420,18 @@ export const getPatchCampagnesIdUrl = (id: string,) => {
 }
 
 /**
- * Permission : `cotisation.gerer`. Brouillon : tout ; active : RG-COT-013.
+ * Permission : `cotisation.gerer`. Brouillon : tout (RG-COT-001). Active (RG-COT-013) : `libelle` ; `dateFin` (prolongation : nouvelles périodes pour les membres de la campagne ; réduction : échéances futures sans imputation supprimées, sinon `422 ECHEANCE_DEJA_IMPUTEE`) ; `montant` (échéances futures sans imputation ni ajustement individuel). Clôturée : `libelle`. Autre champ → `422 NON_MODIFIABLE`. `If-Match` obligatoire depuis la console.
  * @summary Modifier une campagne
  */
 export const patchCampagnesId = async (id: string,
-    campagne: NonReadonly<Campagne>, options?: Parameters<typeof clientApi>[1]): Promise<Campagne> => {
+    campagneMaj: CampagneMaj, options?: Parameters<typeof clientApi>[1]): Promise<Campagne> => {
 
   return clientApi<Campagne>(getPatchCampagnesIdUrl(id),
   {
     ...options,
     method: 'PATCH',
     headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
-    body: JSON.stringify(campagne)
+    body: JSON.stringify(campagneMaj)
   }
 );}
 
@@ -460,7 +441,7 @@ export const patchCampagnesId = async (id: string,
 
 export const getPatchCampagnesIdMutationKey = () => ['patchCampagnesId'] as const;
 
-export const getPatchCampagnesIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPatchCampagnesIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchCampagnesId>>, TError,PatchCampagnesIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof patchCampagnesId>>, TError,PatchCampagnesIdMutationVariables, TContext> => {
 
@@ -488,15 +469,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PatchCampagnesIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchCampagnesId>>>
-    export type PatchCampagnesIdMutationBody = NonReadonly<Campagne>
-    export type PatchCampagnesIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
-    export type PatchCampagnesIdMutationVariables = {id: string;data: NonReadonly<Campagne>}
+    export type PatchCampagnesIdMutationBody = CampagneMaj
+    export type PatchCampagnesIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>
+    export type PatchCampagnesIdMutationVariables = {id: string;data: CampagneMaj}
 
     /**
- * Permission : `cotisation.gerer`. Brouillon : tout ; active : RG-COT-013.
+ * Permission : `cotisation.gerer`. Brouillon : tout (RG-COT-001). Active (RG-COT-013) : `libelle` ; `dateFin` (prolongation : nouvelles périodes pour les membres de la campagne ; réduction : échéances futures sans imputation supprimées, sinon `422 ECHEANCE_DEJA_IMPUTEE`) ; `montant` (échéances futures sans imputation ni ajustement individuel). Clôturée : `libelle`. Autre champ → `422 NON_MODIFIABLE`. `If-Match` obligatoire depuis la console.
  * @summary Modifier une campagne
  */
-export const usePatchCampagnesId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePatchCampagnesId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | PreconditionEchoueeResponse | InvalideResponse | PreconditionRequiseResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchCampagnesId>>, TError,PatchCampagnesIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchCampagnesId>>,
@@ -506,7 +487,120 @@ export const usePatchCampagnesId = <TError = ErrorType<NonAuthentifieResponse | 
       > => {
       return useMutation(getPatchCampagnesIdMutationOptions(options), queryClient);
     }
-    export const getPostCampagnesIdActiverUrl = (id: string,) => {
+    export const getGetCampagnesIdApercuUrl = (id: string,) => {
+
+
+
+
+  return `/campagnes/${id}/apercu`
+}
+
+/**
+ * Permission : `cotisation.lire`. Écran A8 : membres ciblés à cet instant (RG-COT-010), périodes (RG-COT-011), nombre d'échéances et montant total attendu.
+ * @summary Aperçu de l'échéancier
+ */
+export const getCampagnesIdApercu = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<ApercuCampagne> => {
+
+  return clientApi<ApercuCampagne>(getGetCampagnesIdApercuUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCampagnesIdApercuQueryKey = (id: string,) => {
+    return [
+    `/campagnes/${id}/apercu`
+    ] as const;
+    }
+
+
+export const getGetCampagnesIdApercuQueryOptions = <TData = Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCampagnesIdApercuQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCampagnesIdApercu>>> = ({ signal }) => getCampagnesIdApercu(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCampagnesIdApercuQueryResult = NonNullable<Awaited<ReturnType<typeof getCampagnesIdApercu>>>
+export type GetCampagnesIdApercuQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>
+
+
+/**
+ * Permission : `cotisation.lire`. Écran A8 : membres ciblés à cet instant (RG-COT-010), périodes (RG-COT-011), nombre d'échéances et montant total attendu.
+ * @summary Aperçu de l'échéancier
+ */
+export function useGetCampagnesIdApercu<TData = Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCampagnesIdApercu>>,
+          TError,
+          Awaited<ReturnType<typeof getCampagnesIdApercu>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `cotisation.lire`. Écran A8 : membres ciblés à cet instant (RG-COT-010), périodes (RG-COT-011), nombre d'échéances et montant total attendu.
+ * @summary Aperçu de l'échéancier
+ */
+export function useGetCampagnesIdApercu<TData = Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCampagnesIdApercu>>,
+          TError,
+          Awaited<ReturnType<typeof getCampagnesIdApercu>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `cotisation.lire`. Écran A8 : membres ciblés à cet instant (RG-COT-010), périodes (RG-COT-011), nombre d'échéances et montant total attendu.
+ * @summary Aperçu de l'échéancier
+ */
+export function useGetCampagnesIdApercu<TData = Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `cotisation.lire`. Écran A8 : membres ciblés à cet instant (RG-COT-010), périodes (RG-COT-011), nombre d'échéances et montant total attendu.
+ * @summary Aperçu de l'échéancier
+ */
+export function useGetCampagnesIdApercu<TData = Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdApercu>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCampagnesIdApercuQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPostCampagnesIdActiverUrl = (id: string,) => {
 
 
 
@@ -515,7 +609,7 @@ export const usePatchCampagnesId = <TError = ErrorType<NonAuthentifieResponse | 
 }
 
 /**
- * Permission : `cotisation.gerer`. Exigences : RF-031. RG-COT-010, RG-COT-011.
+ * Permission : `cotisation.gerer`. Exigences : RF-031. RG-COT-010, RG-COT-011 ; avances imputées (RG-COT-022). `409` si la campagne n'est pas en brouillon.
  * @summary Activer et générer l'échéancier
  */
 export const postCampagnesIdActiver = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Campagne> => {
@@ -535,7 +629,7 @@ export const postCampagnesIdActiver = async (id: string, options?: Parameters<ty
 
 export const getPostCampagnesIdActiverMutationKey = () => ['postCampagnesIdActiver'] as const;
 
-export const getPostCampagnesIdActiverMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostCampagnesIdActiverMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCampagnesIdActiver>>, TError,PostCampagnesIdActiverMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postCampagnesIdActiver>>, TError,PostCampagnesIdActiverMutationVariables, TContext> => {
 
@@ -564,14 +658,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostCampagnesIdActiverMutationResult = NonNullable<Awaited<ReturnType<typeof postCampagnesIdActiver>>>
 
-    export type PostCampagnesIdActiverMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostCampagnesIdActiverMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostCampagnesIdActiverMutationVariables = {id: string}
 
     /**
- * Permission : `cotisation.gerer`. Exigences : RF-031. RG-COT-010, RG-COT-011.
+ * Permission : `cotisation.gerer`. Exigences : RF-031. RG-COT-010, RG-COT-011 ; avances imputées (RG-COT-022). `409` si la campagne n'est pas en brouillon.
  * @summary Activer et générer l'échéancier
  */
-export const usePostCampagnesIdActiver = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostCampagnesIdActiver = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCampagnesIdActiver>>, TError,PostCampagnesIdActiverMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postCampagnesIdActiver>>,
@@ -590,7 +684,7 @@ export const usePostCampagnesIdActiver = <TError = ErrorType<NonAuthentifieRespo
 }
 
 /**
- * Permission : `cotisation.gerer`.
+ * Permission : `cotisation.gerer`. RG-COT-015 : plus de génération, les échéances restantes restent dues. `409` si la campagne n'est pas active.
  * @summary Clôturer la campagne
  */
 export const postCampagnesIdCloturer = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<Campagne> => {
@@ -610,7 +704,7 @@ export const postCampagnesIdCloturer = async (id: string, options?: Parameters<t
 
 export const getPostCampagnesIdCloturerMutationKey = () => ['postCampagnesIdCloturer'] as const;
 
-export const getPostCampagnesIdCloturerMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostCampagnesIdCloturerMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCampagnesIdCloturer>>, TError,PostCampagnesIdCloturerMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postCampagnesIdCloturer>>, TError,PostCampagnesIdCloturerMutationVariables, TContext> => {
 
@@ -639,14 +733,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostCampagnesIdCloturerMutationResult = NonNullable<Awaited<ReturnType<typeof postCampagnesIdCloturer>>>
 
-    export type PostCampagnesIdCloturerMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostCampagnesIdCloturerMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>
     export type PostCampagnesIdCloturerMutationVariables = {id: string}
 
     /**
- * Permission : `cotisation.gerer`.
+ * Permission : `cotisation.gerer`. RG-COT-015 : plus de génération, les échéances restantes restent dues. `409` si la campagne n'est pas active.
  * @summary Clôturer la campagne
  */
-export const usePostCampagnesIdCloturer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostCampagnesIdCloturer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCampagnesIdCloturer>>, TError,PostCampagnesIdCloturerMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postCampagnesIdCloturer>>,
@@ -665,7 +759,7 @@ export const usePostCampagnesIdCloturer = <TError = ErrorType<NonAuthentifieResp
 }
 
 /**
- * Permission : `cotisation.gerer`.
+ * Permission : `cotisation.gerer`. RG-COT-012 : campagne active seulement (`409`). Sans rattrapage, périodes dont l'échéance n'est pas passée à la date d'ajout ni antérieure à l'adhésion ; avec rattrapage, toutes. Honoraires et bienfaiteurs acceptés. 500 membres par appel.
  * @summary Ajouter des membres à la campagne
  */
 export const postCampagnesIdMembres = async (id: string,
@@ -686,7 +780,7 @@ export const postCampagnesIdMembres = async (id: string,
 
 export const getPostCampagnesIdMembresMutationKey = () => ['postCampagnesIdMembres'] as const;
 
-export const getPostCampagnesIdMembresMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostCampagnesIdMembresMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCampagnesIdMembres>>, TError,PostCampagnesIdMembresMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postCampagnesIdMembres>>, TError,PostCampagnesIdMembresMutationVariables, TContext> => {
 
@@ -715,14 +809,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostCampagnesIdMembresMutationResult = NonNullable<Awaited<ReturnType<typeof postCampagnesIdMembres>>>
     export type PostCampagnesIdMembresMutationBody = PostCampagnesIdMembresBody
-    export type PostCampagnesIdMembresMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostCampagnesIdMembresMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostCampagnesIdMembresMutationVariables = {id: string;data: PostCampagnesIdMembresBody}
 
     /**
- * Permission : `cotisation.gerer`.
+ * Permission : `cotisation.gerer`. RG-COT-012 : campagne active seulement (`409`). Sans rattrapage, périodes dont l'échéance n'est pas passée à la date d'ajout ni antérieure à l'adhésion ; avec rattrapage, toutes. Honoraires et bienfaiteurs acceptés. 500 membres par appel.
  * @summary Ajouter des membres à la campagne
  */
-export const usePostCampagnesIdMembres = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostCampagnesIdMembres = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCampagnesIdMembres>>, TError,PostCampagnesIdMembresMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postCampagnesIdMembres>>,
@@ -741,7 +835,7 @@ export const usePostCampagnesIdMembres = <TError = ErrorType<NonAuthentifieRespo
 }
 
 /**
- * Permission : `cotisation.lire`. Exigences : RF-075.
+ * Permission : `cotisation.lire`. Exigences : RF-075. Taux selon RG-RAP-002 (échéances échues, exonérées exclues ; `null` si rien n'est échu).
  * @summary Statistiques de recouvrement
  */
 export const getCampagnesIdStatistiques = async (id: string, options?: Parameters<typeof clientApi>[1]): Promise<StatistiquesCampagne> => {
@@ -789,7 +883,7 @@ export type GetCampagnesIdStatistiquesQueryError = ErrorType<NonAuthentifieRespo
 
 
 /**
- * Permission : `cotisation.lire`. Exigences : RF-075.
+ * Permission : `cotisation.lire`. Exigences : RF-075. Taux selon RG-RAP-002 (échéances échues, exonérées exclues ; `null` si rien n'est échu).
  * @summary Statistiques de recouvrement
  */
 export function useGetCampagnesIdStatistiques<TData = Awaited<ReturnType<typeof getCampagnesIdStatistiques>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
@@ -803,7 +897,7 @@ export function useGetCampagnesIdStatistiques<TData = Awaited<ReturnType<typeof 
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `cotisation.lire`. Exigences : RF-075.
+ * Permission : `cotisation.lire`. Exigences : RF-075. Taux selon RG-RAP-002 (échéances échues, exonérées exclues ; `null` si rien n'est échu).
  * @summary Statistiques de recouvrement
  */
 export function useGetCampagnesIdStatistiques<TData = Awaited<ReturnType<typeof getCampagnesIdStatistiques>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
@@ -817,7 +911,7 @@ export function useGetCampagnesIdStatistiques<TData = Awaited<ReturnType<typeof 
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `cotisation.lire`. Exigences : RF-075.
+ * Permission : `cotisation.lire`. Exigences : RF-075. Taux selon RG-RAP-002 (échéances échues, exonérées exclues ; `null` si rien n'est échu).
  * @summary Statistiques de recouvrement
  */
 export function useGetCampagnesIdStatistiques<TData = Awaited<ReturnType<typeof getCampagnesIdStatistiques>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
@@ -825,7 +919,7 @@ export function useGetCampagnesIdStatistiques<TData = Awaited<ReturnType<typeof 
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `cotisation.lire`. Exigences : RF-075.
+ * Permission : `cotisation.lire`. Exigences : RF-075. Taux selon RG-RAP-002 (échéances échues, exonérées exclues ; `null` si rien n'est échu).
  * @summary Statistiques de recouvrement
  */
 export function useGetCampagnesIdStatistiques<TData = Awaited<ReturnType<typeof getCampagnesIdStatistiques>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
@@ -834,6 +928,134 @@ export function useGetCampagnesIdStatistiques<TData = Awaited<ReturnType<typeof 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetCampagnesIdStatistiquesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetCampagnesIdEcheancierUrl = (id: string,
+    params?: GetCampagnesIdEcheancierParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/campagnes/${id}/echeancier?${stringifiedParams}` : `/campagnes/${id}/echeancier`
+}
+
+/**
+ * Permission : `cotisation.lire`. Exigences : RF-031. Écran A9 : une ligne par membre de la campagne (ordre des numéros), avec ses échéances.
+ * @summary Échéancier membres × périodes
+ */
+export const getCampagnesIdEcheancier = async (id: string,
+    params?: GetCampagnesIdEcheancierParams, options?: Parameters<typeof clientApi>[1]): Promise<PageEcheancier> => {
+
+  return clientApi<PageEcheancier>(getGetCampagnesIdEcheancierUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCampagnesIdEcheancierQueryKey = (id: string,
+    params?: GetCampagnesIdEcheancierParams,) => {
+    return [
+    `/campagnes/${id}/echeancier`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetCampagnesIdEcheancierQueryOptions = <TData = Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(id: string,
+    params?: GetCampagnesIdEcheancierParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCampagnesIdEcheancierQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCampagnesIdEcheancier>>> = ({ signal }) => getCampagnesIdEcheancier(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCampagnesIdEcheancierQueryResult = NonNullable<Awaited<ReturnType<typeof getCampagnesIdEcheancier>>>
+export type GetCampagnesIdEcheancierQueryError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>
+
+
+/**
+ * Permission : `cotisation.lire`. Exigences : RF-031. Écran A9 : une ligne par membre de la campagne (ordre des numéros), avec ses échéances.
+ * @summary Échéancier membres × périodes
+ */
+export function useGetCampagnesIdEcheancier<TData = Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+ id: string,
+    params: undefined |  GetCampagnesIdEcheancierParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCampagnesIdEcheancier>>,
+          TError,
+          Awaited<ReturnType<typeof getCampagnesIdEcheancier>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `cotisation.lire`. Exigences : RF-031. Écran A9 : une ligne par membre de la campagne (ordre des numéros), avec ses échéances.
+ * @summary Échéancier membres × périodes
+ */
+export function useGetCampagnesIdEcheancier<TData = Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+ id: string,
+    params?: GetCampagnesIdEcheancierParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCampagnesIdEcheancier>>,
+          TError,
+          Awaited<ReturnType<typeof getCampagnesIdEcheancier>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `cotisation.lire`. Exigences : RF-031. Écran A9 : une ligne par membre de la campagne (ordre des numéros), avec ses échéances.
+ * @summary Échéancier membres × périodes
+ */
+export function useGetCampagnesIdEcheancier<TData = Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+ id: string,
+    params?: GetCampagnesIdEcheancierParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Permission : `cotisation.lire`. Exigences : RF-031. Écran A9 : une ligne par membre de la campagne (ordre des numéros), avec ses échéances.
+ * @summary Échéancier membres × périodes
+ */
+export function useGetCampagnesIdEcheancier<TData = Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ErreurResponse>>(
+ id: string,
+    params?: GetCampagnesIdEcheancierParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCampagnesIdEcheancier>>, TError, TData>>, request?: SecondParameter<typeof clientApi>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCampagnesIdEcheancierQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -861,7 +1083,7 @@ export const getGetEcheancesUrl = (params?: GetEcheancesParams,) => {
 }
 
 /**
- * Permission : `cotisation.lire`. Exigences : RF-031, RF-035.
+ * Permission : `cotisation.lire`. Exigences : RF-031, RF-035. Tri : date d'échéance croissante.
  * @summary Lister les échéances
  */
 export const getEcheances = async (params?: GetEcheancesParams, options?: Parameters<typeof clientApi>[1]): Promise<PageEcheance> => {
@@ -909,7 +1131,7 @@ export type GetEcheancesQueryError = ErrorType<NonAuthentifieResponse | Interdit
 
 
 /**
- * Permission : `cotisation.lire`. Exigences : RF-031, RF-035.
+ * Permission : `cotisation.lire`. Exigences : RF-031, RF-035. Tri : date d'échéance croissante.
  * @summary Lister les échéances
  */
 export function useGetEcheances<TData = Awaited<ReturnType<typeof getEcheances>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -923,7 +1145,7 @@ export function useGetEcheances<TData = Awaited<ReturnType<typeof getEcheances>>
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `cotisation.lire`. Exigences : RF-031, RF-035.
+ * Permission : `cotisation.lire`. Exigences : RF-031, RF-035. Tri : date d'échéance croissante.
  * @summary Lister les échéances
  */
 export function useGetEcheances<TData = Awaited<ReturnType<typeof getEcheances>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -937,7 +1159,7 @@ export function useGetEcheances<TData = Awaited<ReturnType<typeof getEcheances>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `cotisation.lire`. Exigences : RF-031, RF-035.
+ * Permission : `cotisation.lire`. Exigences : RF-031, RF-035. Tri : date d'échéance croissante.
  * @summary Lister les échéances
  */
 export function useGetEcheances<TData = Awaited<ReturnType<typeof getEcheances>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -945,7 +1167,7 @@ export function useGetEcheances<TData = Awaited<ReturnType<typeof getEcheances>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Permission : `cotisation.lire`. Exigences : RF-031, RF-035.
+ * Permission : `cotisation.lire`. Exigences : RF-031, RF-035. Tri : date d'échéance croissante.
  * @summary Lister les échéances
  */
 export function useGetEcheances<TData = Awaited<ReturnType<typeof getEcheances>>, TError = ErrorType<NonAuthentifieResponse | InterditResponse | ErreurResponse>>(
@@ -974,7 +1196,7 @@ export const getPatchEcheancesIdUrl = (id: string,) => {
 }
 
 /**
- * Permission : `cotisation.gerer`. Exigences : RF-031.
+ * Permission : `cotisation.gerer`. Exigences : RF-031. Campagne active (`409`), exercice ouvert, aucune imputation (`422 ECHEANCE_DEJA_IMPUTEE`), date dans l'exercice (`422 HORS_EXERCICE`).
  * @summary Ajuster une échéance sans imputation
  */
 export const patchEcheancesId = async (id: string,
@@ -995,7 +1217,7 @@ export const patchEcheancesId = async (id: string,
 
 export const getPatchEcheancesIdMutationKey = () => ['patchEcheancesId'] as const;
 
-export const getPatchEcheancesIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPatchEcheancesIdMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchEcheancesId>>, TError,PatchEcheancesIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof patchEcheancesId>>, TError,PatchEcheancesIdMutationVariables, TContext> => {
 
@@ -1024,14 +1246,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PatchEcheancesIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchEcheancesId>>>
     export type PatchEcheancesIdMutationBody = EcheanceMaj
-    export type PatchEcheancesIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PatchEcheancesIdMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PatchEcheancesIdMutationVariables = {id: string;data: EcheanceMaj}
 
     /**
- * Permission : `cotisation.gerer`. Exigences : RF-031.
+ * Permission : `cotisation.gerer`. Exigences : RF-031. Campagne active (`409`), exercice ouvert, aucune imputation (`422 ECHEANCE_DEJA_IMPUTEE`), date dans l'exercice (`422 HORS_EXERCICE`).
  * @summary Ajuster une échéance sans imputation
  */
-export const usePatchEcheancesId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePatchEcheancesId = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchEcheancesId>>, TError,PatchEcheancesIdMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchEcheancesId>>,
@@ -1050,7 +1272,7 @@ export const usePatchEcheancesId = <TError = ErrorType<NonAuthentifieResponse | 
 }
 
 /**
- * Permission : `cotisation.exonerer`. RG-COT-014.
+ * Permission : `cotisation.exonerer`. RG-COT-014 : motif obligatoire, refusée si l'échéance a des imputations (`422 ECHEANCE_DEJA_IMPUTEE`) ou est déjà exonérée (`409`).
  * @summary Exonérer une échéance
  */
 export const postEcheancesIdExonerer = async (id: string,
@@ -1071,7 +1293,7 @@ export const postEcheancesIdExonerer = async (id: string,
 
 export const getPostEcheancesIdExonererMutationKey = () => ['postEcheancesIdExonerer'] as const;
 
-export const getPostEcheancesIdExonererMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const getPostEcheancesIdExonererMutationOptions = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postEcheancesIdExonerer>>, TError,PostEcheancesIdExonererMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postEcheancesIdExonerer>>, TError,PostEcheancesIdExonererMutationVariables, TContext> => {
 
@@ -1100,14 +1322,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostEcheancesIdExonererMutationResult = NonNullable<Awaited<ReturnType<typeof postEcheancesIdExonerer>>>
     export type PostEcheancesIdExonererMutationBody = Motif
-    export type PostEcheancesIdExonererMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>
+    export type PostEcheancesIdExonererMutationError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>
     export type PostEcheancesIdExonererMutationVariables = {id: string;data: Motif}
 
     /**
- * Permission : `cotisation.exonerer`. RG-COT-014.
+ * Permission : `cotisation.exonerer`. RG-COT-014 : motif obligatoire, refusée si l'échéance a des imputations (`422 ECHEANCE_DEJA_IMPUTEE`) ou est déjà exonérée (`409`).
  * @summary Exonérer une échéance
  */
-export const usePostEcheancesIdExonerer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | InvalideResponse | ErreurResponse>,
+export const usePostEcheancesIdExonerer = <TError = ErrorType<NonAuthentifieResponse | InterditResponse | NonTrouveResponse | ConflitResponse | InvalideResponse | ErreurResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postEcheancesIdExonerer>>, TError,PostEcheancesIdExonererMutationVariables, TContext>, request?: SecondParameter<typeof clientApi>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postEcheancesIdExonerer>>,

@@ -30,6 +30,14 @@ window.ResizeObserver = ResizeObserverFactice as unknown as typeof ResizeObserve
 Element.prototype.scrollIntoView = () => {};
 window.scrollTo = (() => {}) as typeof window.scrollTo;
 
+// Envois multipart (import, photo) : jsdom fournit ses propres FormData/File/Blob, que le `fetch` de Node (intercepté
+// par MSW) ne sait pas sérialiser. On rétablit les classes de Node : FormData lue depuis une Response de Node.
+{
+  const { Blob: BlobNode, File: FileNode } = await import('node:buffer');
+  const FormDataNode = (await new Response(new URLSearchParams('a=1')).formData()).constructor;
+  Object.assign(globalThis, { FormData: FormDataNode, File: FileNode, Blob: BlobNode });
+}
+
 // Écrans chargés à la demande (import dynamique) : le premier rendu d'un fichier de test peut dépasser
 // 1 s quand la CI construit et teste en parallèle.
 configure({ asyncUtilTimeout: 5000 });

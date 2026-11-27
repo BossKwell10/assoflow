@@ -34,6 +34,26 @@ function invalide(code: string, message: string): ErreurMetier {
   return new ErreurMetier('VALIDATION', message, [{ champ: 'fichier', code, message }]);
 }
 
+/** Lit la partie `fichier` d'une requête multipart (2 Mo au plus), sans contrôle de type. */
+export async function lireFichierMultipart(req: FastifyRequest): Promise<{ contenu: Buffer; nom: string }> {
+  if (!req.isMultipart()) throw invalide('MULTIPART_ATTENDU', 'Requête multipart/form-data attendue');
+  try {
+    const partie = await req.file();
+    if (!partie || partie.fieldname !== 'fichier') {
+      throw invalide('FICHIER_MANQUANT', 'Champ « fichier » manquant');
+    }
+    const contenu = await partie.toBuffer();
+    if (contenu.length === 0) throw invalide('FICHIER_MANQUANT', 'Fichier vide');
+    return { contenu, nom: partie.filename.slice(0, 200) };
+  } catch (e) {
+    if (e instanceof ErreurMetier) throw e;
+    if ((e as { code?: string }).code === 'FST_REQ_FILE_TOO_LARGE') {
+      throw invalide('FICHIER_TROP_GROS', 'Fichier trop volumineux (2 Mo maximum)');
+    }
+    throw invalide('MULTIPART_INVALIDE', 'Corps multipart illisible');
+  }
+}
+
 /** Lit la partie `fichier` d'une requête multipart et vérifie taille et type réel (PNG, JPEG, WebP). */
 export async function lireImageMultipart(req: FastifyRequest): Promise<Image> {
   if (!req.isMultipart()) throw invalide('MULTIPART_ATTENDU', 'Requête multipart/form-data attendue');

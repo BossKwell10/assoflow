@@ -22,7 +22,12 @@ export function versCsv<T>(colonnes: ColonneCsv<T>[], lignes: readonly T[]): str
 
 /** Déclenche le téléchargement d'un fichier généré côté client. */
 export function telechargerFichier(nom: string, contenu: string, type = 'text/csv;charset=utf-8') {
-  const url = URL.createObjectURL(new Blob([contenu], { type }));
+  telechargerBlob(nom, new Blob([contenu], { type }));
+}
+
+/** Déclenche le téléchargement d'un fichier reçu de l'API (modèle Excel, carte PDF). */
+export function telechargerBlob(nom: string, contenu: Blob) {
+  const url = URL.createObjectURL(contenu);
   const lien = document.createElement('a');
   lien.href = url;
   lien.download = nom;

@@ -1169,13 +1169,34 @@ paths:
           $ref: '#/components/responses/Interdit'
         default:
           $ref: '#/components/responses/Erreur'
+  /membres/import/modele:
+    get:
+      tags:
+      - Membres
+      summary: Modèle Excel de l'import
+      operationId: get_membres_import_modele
+      description: 'Permission : `membre.importer`. Exigences : RF-024. Colonnes de RG-MBR-007, une ligne d''exemple et une feuille d''aide.'
+      responses:
+        '200':
+          description: Classeur XLSX
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/NonAuthentifie'
+        '403':
+          $ref: '#/components/responses/Interdit'
+        default:
+          $ref: '#/components/responses/Erreur'
   /membres/import:
     post:
       tags:
       - Membres
       summary: Analyser un fichier d'import (CSV/XLSX)
       operationId: post_membres_import
-      description: 'Permission : `membre.importer`. Exigences : RF-024.'
+      description: 'Permission : `membre.importer`. Exigences : RF-024, RG-MBR-007. Structure vérifiée immédiatement (`422` : `COLONNE_MANQUANTE`, `COLONNE_EN_DOUBLE`, `FICHIER_VIDE`, `TROP_DE_LIGNES`, `TYPE_FICHIER_INVALIDE`, `FICHIER_ILLISIBLE`) ; analyse ligne par ligne dans la tâche `import_membres_analyse`. 2 Mo, 5 000 lignes au plus.'
       requestBody:
         required: true
         content:
@@ -1209,7 +1230,7 @@ paths:
       - Membres
       summary: Rapport d'analyse d'import
       operationId: get_membres_import_tacheId
-      description: 'Permission : `membre.importer`.'
+      description: 'Permission : `membre.importer`. Tâche du demandeur seulement. `409` tant que l''analyse n''est pas terminée.'
       parameters:
       - name: tacheId
         in: path
@@ -1230,6 +1251,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/import/{tacheId}/confirmer:
@@ -1238,7 +1261,7 @@ paths:
       - Membres
       summary: Confirmer l'import analysé
       operationId: post_membres_import_tacheId_confirmer
-      description: 'Permission : `membre.importer`. Exigences : RF-024.'
+      description: 'Permission : `membre.importer`. Exigences : RF-024, RF-SUP-054. Une seule confirmation par analyse (`409` ensuite, ou si l''analyse n''est pas terminée). Le bureau atteste le consentement des membres importés (enregistré avec le canal `papier`). Doublons inclus sur demande, marqués « à vérifier ». Création dans la tâche `import_membres_confirmer` ; résultat : `creees`, `doublonsCrees`, `ignorees`, `erreurs`, `famillesCreees`, `details[]`.'
       parameters:
       - name: tacheId
         in: path
@@ -1255,6 +1278,12 @@ paths:
               properties:
                 inclureDoublons:
                   type: boolean
+                attestationConsentement:
+                  type: boolean
+                  enum:
+                  - true
+              required:
+              - attestationConsentement
       responses:
         '202':
           description: Tâche créée
@@ -1268,6 +1297,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '409':
+          $ref: '#/components/responses/Conflit'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -1690,7 +1721,7 @@ paths:
       - Membres
       summary: Carte de membre (PDF avec QR)
       operationId: get_membres_id_carte
-      description: 'Permission : `membre.lire`. Exigences : RF-023.'
+      description: 'Permission : `membre.lire`. Exigences : RF-023, RG-MBR-008. PDF au format ID-1 ; QR = `assoflow:m:<association_id>:<membre_id>:<signature HMAC>`, sans donnée personnelle. `409` pour une fiche anonymisée ou désactivée.'
       parameters:
       - name: id
         in: path
@@ -1702,7 +1733,7 @@ paths:
         '200':
           description: Succès
           content:
-            application/json:
+            application/pdf:
               schema:
                 type: string
                 format: binary
@@ -1712,6 +1743,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /membres/{id}/ayants-droit:
@@ -2089,7 +2122,7 @@ paths:
       - Cotisations
       summary: Lister les campagnes
       operationId: get_campagnes
-      description: 'Permission : `cotisation.lire`. Exigences : RF-030.'
+      description: 'Permission : `cotisation.lire`. Exigences : RF-030. Tri : date de début décroissante.'
       parameters:
       - name: exerciceId
         in: query
@@ -2102,11 +2135,18 @@ paths:
         required: false
         schema:
           type: string
+          enum:
+          - brouillon
+          - active
+          - cloturee
       - name: type
         in: query
         required: false
         schema:
           type: string
+          enum:
+          - ordinaire
+          - exceptionnelle
       - $ref: '#/components/parameters/Limite'
       - $ref: '#/components/parameters/Curseur'
       responses:
@@ -2127,16 +2167,21 @@ paths:
       - Cotisations
       summary: Créer une campagne (brouillon)
       operationId: post_campagnes
-      description: 'Permission : `cotisation.gerer`. Exigences : RF-030, RF-037.'
+      description: 'Permission : `cotisation.gerer`. Exigences : RF-030, RF-037. RG-COT-001 : brouillon, rien n''est généré. Dates dans l''exercice (`422 HORS_EXERCICE`), exercice ouvert (`422 EXERCICE_FERME`), motif obligatoire pour une campagne exceptionnelle.'
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Campagne'
+              $ref: '#/components/schemas/CampagneCreation'
       responses:
         '201':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -2145,6 +2190,8 @@ paths:
           $ref: '#/components/responses/NonAuthentifie'
         '403':
           $ref: '#/components/responses/Interdit'
+        '409':
+          $ref: '#/components/responses/Conflit'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -2166,6 +2213,9 @@ paths:
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -2183,7 +2233,7 @@ paths:
       - Cotisations
       summary: Modifier une campagne
       operationId: patch_campagnes_id
-      description: 'Permission : `cotisation.gerer`. Brouillon : tout ; active : RG-COT-013.'
+      description: 'Permission : `cotisation.gerer`. Brouillon : tout (RG-COT-001). Active (RG-COT-013) : `libelle` ; `dateFin` (prolongation : nouvelles périodes pour les membres de la campagne ; réduction : échéances futures sans imputation supprimées, sinon `422 ECHEANCE_DEJA_IMPUTEE`) ; `montant` (échéances futures sans imputation ni ajustement individuel). Clôturée : `libelle`. Autre champ → `422 NON_MODIFIABLE`. `If-Match` obligatoire depuis la console.'
       parameters:
       - name: id
         in: path
@@ -2191,15 +2241,19 @@ paths:
         schema:
           type: string
           format: uuid
+      - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Campagne'
+              $ref: '#/components/schemas/CampagneMaj'
       responses:
         '200':
           description: Succès
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -2210,8 +2264,41 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '412':
+          $ref: '#/components/responses/PreconditionEchouee'
         '422':
           $ref: '#/components/responses/Invalide'
+        '428':
+          $ref: '#/components/responses/PreconditionRequise'
+        default:
+          $ref: '#/components/responses/Erreur'
+  /campagnes/{id}/apercu:
+    get:
+      tags:
+      - Cotisations
+      summary: Aperçu de l'échéancier
+      operationId: get_campagnes_id_apercu
+      description: 'Permission : `cotisation.lire`. Écran A8 : membres ciblés à cet instant (RG-COT-010), périodes (RG-COT-011), nombre d''échéances et montant total attendu.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApercuCampagne'
+        '401':
+          $ref: '#/components/responses/NonAuthentifie'
+        '403':
+          $ref: '#/components/responses/Interdit'
+        '404':
+          $ref: '#/components/responses/NonTrouve'
         default:
           $ref: '#/components/responses/Erreur'
   /campagnes/{id}/activer:
@@ -2220,7 +2307,7 @@ paths:
       - Cotisations
       summary: Activer et générer l'échéancier
       operationId: post_campagnes_id_activer
-      description: 'Permission : `cotisation.gerer`. Exigences : RF-031. RG-COT-010, RG-COT-011.'
+      description: 'Permission : `cotisation.gerer`. Exigences : RF-031. RG-COT-010, RG-COT-011 ; avances imputées (RG-COT-022). `409` si la campagne n''est pas en brouillon.'
       parameters:
       - name: id
         in: path
@@ -2241,6 +2328,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '409':
+          $ref: '#/components/responses/Conflit'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -2251,7 +2340,7 @@ paths:
       - Cotisations
       summary: Clôturer la campagne
       operationId: post_campagnes_id_cloturer
-      description: 'Permission : `cotisation.gerer`.'
+      description: 'Permission : `cotisation.gerer`. RG-COT-015 : plus de génération, les échéances restantes restent dues. `409` si la campagne n''est pas active.'
       parameters:
       - name: id
         in: path
@@ -2272,8 +2361,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
-        '422':
-          $ref: '#/components/responses/Invalide'
+        '409':
+          $ref: '#/components/responses/Conflit'
         default:
           $ref: '#/components/responses/Erreur'
   /campagnes/{id}/membres:
@@ -2282,7 +2371,7 @@ paths:
       - Cotisations
       summary: Ajouter des membres à la campagne
       operationId: post_campagnes_id_membres
-      description: 'Permission : `cotisation.gerer`.'
+      description: 'Permission : `cotisation.gerer`. RG-COT-012 : campagne active seulement (`409`). Sans rattrapage, périodes dont l''échéance n''est pas passée à la date d''ajout ni antérieure à l''adhésion ; avec rattrapage, toutes. Honoraires et bienfaiteurs acceptés. 500 membres par appel.'
       parameters:
       - name: id
         in: path
@@ -2299,6 +2388,8 @@ paths:
               properties:
                 membreIds:
                   type: array
+                  minItems: 1
+                  maxItems: 500
                   items:
                     type: string
                     format: uuid
@@ -2316,12 +2407,16 @@ paths:
                 properties:
                   echeancesCreees:
                     type: integer
+                required:
+                - echeancesCreees
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '409':
+          $ref: '#/components/responses/Conflit'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -2332,7 +2427,7 @@ paths:
       - Cotisations
       summary: Statistiques de recouvrement
       operationId: get_campagnes_id_statistiques
-      description: 'Permission : `cotisation.lire`. Exigences : RF-075.'
+      description: 'Permission : `cotisation.lire`. Exigences : RF-075. Taux selon RG-RAP-002 (échéances échues, exonérées exclues ; `null` si rien n''est échu).'
       parameters:
       - name: id
         in: path
@@ -2355,13 +2450,51 @@ paths:
           $ref: '#/components/responses/NonTrouve'
         default:
           $ref: '#/components/responses/Erreur'
+  /campagnes/{id}/echeancier:
+    get:
+      tags:
+      - Cotisations
+      summary: Échéancier membres × périodes
+      operationId: get_campagnes_id_echeancier
+      description: 'Permission : `cotisation.lire`. Exigences : RF-031. Écran A9 : une ligne par membre de la campagne (ordre des numéros), avec ses échéances.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: q
+        in: query
+        required: false
+        description: Nom, prénoms ou numéro du membre
+        schema:
+          type: string
+          maxLength: 100
+      - $ref: '#/components/parameters/Limite'
+      - $ref: '#/components/parameters/Curseur'
+      responses:
+        '200':
+          description: Page de résultats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageEcheancier'
+        '401':
+          $ref: '#/components/responses/NonAuthentifie'
+        '403':
+          $ref: '#/components/responses/Interdit'
+        '404':
+          $ref: '#/components/responses/NonTrouve'
+        default:
+          $ref: '#/components/responses/Erreur'
   /echeances:
     get:
       tags:
       - Cotisations
       summary: Lister les échéances
       operationId: get_echeances
-      description: 'Permission : `cotisation.lire`. Exigences : RF-031, RF-035.'
+      description: 'Permission : `cotisation.lire`. Exigences : RF-031, RF-035. Tri : date d''échéance croissante.'
       parameters:
       - name: campagneId
         in: query
@@ -2380,6 +2513,12 @@ paths:
         required: false
         schema:
           type: string
+          enum:
+          - a_venir
+          - partielle
+          - payee
+          - en_retard
+          - exoneree
       - name: du
         in: query
         required: false
@@ -2413,7 +2552,7 @@ paths:
       - Cotisations
       summary: Ajuster une échéance sans imputation
       operationId: patch_echeances_id
-      description: 'Permission : `cotisation.gerer`. Exigences : RF-031.'
+      description: 'Permission : `cotisation.gerer`. Exigences : RF-031. Campagne active (`409`), exercice ouvert, aucune imputation (`422 ECHEANCE_DEJA_IMPUTEE`), date dans l''exercice (`422 HORS_EXERCICE`).'
       parameters:
       - name: id
         in: path
@@ -2440,6 +2579,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '409':
+          $ref: '#/components/responses/Conflit'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -2450,7 +2591,7 @@ paths:
       - Cotisations
       summary: Exonérer une échéance
       operationId: post_echeances_id_exonerer
-      description: 'Permission : `cotisation.exonerer`. RG-COT-014.'
+      description: 'Permission : `cotisation.exonerer`. RG-COT-014 : motif obligatoire, refusée si l''échéance a des imputations (`422 ECHEANCE_DEJA_IMPUTEE`) ou est déjà exonérée (`409`).'
       parameters:
       - name: id
         in: path
@@ -2477,6 +2618,8 @@ paths:
           $ref: '#/components/responses/Interdit'
         '404':
           $ref: '#/components/responses/NonTrouve'
+        '409':
+          $ref: '#/components/responses/Conflit'
         '422':
           $ref: '#/components/responses/Invalide'
         default:
@@ -7327,6 +7470,18 @@ components:
           - 'null'
           format: date-time
           readOnly: true
+        nombrePeriodes:
+          type: integer
+          readOnly: true
+        tauxRecouvrement:
+          type:
+          - number
+          - 'null'
+          description: RG-RAP-002 (échéances échues) ; `null` tant que rien n'est échu
+          readOnly: true
+        etag:
+          type: string
+          readOnly: true
       required:
       - exerciceId
       - libelle
@@ -7335,6 +7490,193 @@ components:
       - periodicite
       - dateDebut
       - dateFin
+    CampagneCreation:
+      type: object
+      description: Création en brouillon (RG-COT-001). `jourEcheance` 5 par défaut ; `categoriesCibles` vide = toutes.
+      properties:
+        exerciceId:
+          type: string
+          format: uuid
+        libelle:
+          type: string
+          minLength: 1
+          maxLength: 150
+        type:
+          type: string
+          enum:
+          - ordinaire
+          - exceptionnelle
+        motif:
+          type:
+          - string
+          - 'null'
+          enum:
+          - projet
+          - deces
+          - evenement
+          - autre
+          - null
+          description: Obligatoire pour une campagne exceptionnelle (RF-037)
+        projetId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        montant:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 5000000
+          description: Montant par période (FCFA)
+        periodicite:
+          type: string
+          enum:
+          - unique
+          - mensuelle
+          - trimestrielle
+          - semestrielle
+          - annuelle
+        dateDebut:
+          type: string
+          format: date
+        dateFin:
+          type: string
+          format: date
+        jourEcheance:
+          type: integer
+          minimum: 1
+          maximum: 28
+        categoriesCibles:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            format: uuid
+      required:
+      - exerciceId
+      - libelle
+      - type
+      - montant
+      - periodicite
+      - dateDebut
+      - dateFin
+    CampagneMaj:
+      type: object
+      description: Champs envoyés seulement (RG-COT-001, RG-COT-013).
+      properties:
+        exerciceId:
+          type: string
+          format: uuid
+        libelle:
+          type: string
+          minLength: 1
+          maxLength: 150
+        type:
+          type: string
+          enum:
+          - ordinaire
+          - exceptionnelle
+        motif:
+          type:
+          - string
+          - 'null'
+          enum:
+          - projet
+          - deces
+          - evenement
+          - autre
+          - null
+          description: Obligatoire pour une campagne exceptionnelle (RF-037)
+        projetId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        montant:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 5000000
+          description: Montant par période (FCFA)
+        periodicite:
+          type: string
+          enum:
+          - unique
+          - mensuelle
+          - trimestrielle
+          - semestrielle
+          - annuelle
+        dateDebut:
+          type: string
+          format: date
+        dateFin:
+          type: string
+          format: date
+        jourEcheance:
+          type: integer
+          minimum: 1
+          maximum: 28
+        categoriesCibles:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            format: uuid
+    ApercuCampagne:
+      type: object
+      properties:
+        membresCibles:
+          type: integer
+        nombrePeriodes:
+          type: integer
+        nombreEcheances:
+          type: integer
+        montantTotal:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Montant en FCFA (XOF), entier
+        periodes:
+          type: array
+          items:
+            type: object
+            properties:
+              numero:
+                type: integer
+              libelle:
+                type: string
+              dateEcheance:
+                type: string
+                format: date
+            required:
+            - numero
+            - libelle
+            - dateEcheance
+      required:
+      - membresCibles
+      - nombrePeriodes
+      - nombreEcheances
+      - montantTotal
+      - periodes
+    LigneEcheancier:
+      type: object
+      properties:
+        membreId:
+          type: string
+          format: uuid
+        membreNumero:
+          type: string
+        membreNom:
+          type: string
+        echeances:
+          type: array
+          items:
+            $ref: '#/components/schemas/Echeance'
+      required:
+      - membreId
+      - membreNumero
+      - membreNom
+      - echeances
     Echeance:
       type: object
       properties:
@@ -7382,6 +7724,24 @@ components:
           type:
           - string
           - 'null'
+        imputee:
+          type: boolean
+          description: Au moins une imputation (l'échéance n'est plus ajustable ni exonérable)
+      required:
+      - id
+      - campagneId
+      - campagneLibelle
+      - membreId
+      - membreNumero
+      - membreNom
+      - numeroPeriode
+      - libellePeriode
+      - montantDu
+      - montantPaye
+      - dateEcheance
+      - situation
+      - motifExoneration
+      - imputee
     EcheanceMaj:
       type: object
       properties:
@@ -7416,10 +7776,57 @@ components:
           format: int64
           minimum: 0
           description: Montant en FCFA (XOF), entier
+        montantRecouvreEchu:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Imputé sur les échéances échues (FCFA)
         tauxRecouvrement:
-          type: number
+          type:
+          - number
+          - 'null'
           minimum: 0
           maximum: 1
+          description: RG-RAP-002 ; `null` tant que rien n'est échu
+        parPeriode:
+          type: array
+          items:
+            type: object
+            properties:
+              numeroPeriode:
+                type: integer
+              libellePeriode:
+                type: string
+              dateEcheance:
+                type: string
+                format: date
+              montantAttendu:
+                type: integer
+                format: int64
+              montantRecouvre:
+                type: integer
+                format: int64
+              echeancesEnRetard:
+                type: integer
+              echeancesPayees:
+                type: integer
+            required:
+            - numeroPeriode
+            - libellePeriode
+            - dateEcheance
+            - montantAttendu
+            - montantRecouvre
+            - echeancesEnRetard
+            - echeancesPayees
+      required:
+      - campagneId
+      - membresCibles
+      - montantAttendu
+      - montantEchuAttendu
+      - montantRecouvre
+      - montantRecouvreEchu
+      - tauxRecouvrement
+      - parPeriode
     Imputation:
       type: object
       properties:
@@ -8399,12 +8806,28 @@ components:
         createdAt:
           type: string
           format: date-time
+        termineAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - id
+      - type
+      - statut
+      - progression
+      - erreur
+      - resultat
+      - createdAt
+      - termineAt
     RapportImport:
       type: object
       properties:
         tacheId:
           type: string
           format: uuid
+        nomFichier:
+          type: string
         lignes:
           type: integer
         aCreer:
@@ -8413,8 +8836,19 @@ components:
           type: integer
         erreurs:
           type: integer
+        colonnesIgnorees:
+          type: array
+          items:
+            type: string
+        confirmationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: Tâche de confirmation, une fois l'import confirmé
         details:
           type: array
+          description: Lignes en doublon probable ou en erreur (numéro de ligne du fichier, en-tête = 1)
           items:
             type: object
             properties:
@@ -8426,10 +8860,27 @@ components:
                 - a_creer
                 - doublon_probable
                 - erreur
+              nom:
+                type: string
               message:
                 type:
                 - string
                 - 'null'
+            required:
+            - ligne
+            - statut
+            - nom
+            - message
+      required:
+      - tacheId
+      - nomFichier
+      - lignes
+      - aCreer
+      - doublons
+      - erreurs
+      - colonnesIgnorees
+      - confirmationId
+      - details
     LigneJournalPublic:
       type: object
       properties:
@@ -9073,6 +9524,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Campagne'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+      required:
+      - donnees
+      - page
+    PageEcheancier:
+      type: object
+      properties:
+        donnees:
+          type: array
+          items:
+            $ref: '#/components/schemas/LigneEcheancier'
         page:
           $ref: '#/components/schemas/PageInfo'
       required:

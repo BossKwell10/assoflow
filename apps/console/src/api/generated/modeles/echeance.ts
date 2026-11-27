@@ -8,26 +8,28 @@
 import type { EcheanceSituation } from './echeanceSituation';
 
 export interface Echeance {
-  id?: string;
-  campagneId?: string;
-  campagneLibelle?: string;
-  membreId?: string;
-  membreNumero?: string;
-  membreNom?: string;
-  numeroPeriode?: number;
-  libellePeriode?: string;
+  id: string;
+  campagneId: string;
+  campagneLibelle: string;
+  membreId: string;
+  membreNumero: string;
+  membreNom: string;
+  numeroPeriode: number;
+  libellePeriode: string;
   /**
      * Montant en FCFA (XOF), entier
      * @minimum 0
      */
-  montantDu?: number;
+  montantDu: number;
   /**
      * Montant en FCFA (XOF), entier
      * @minimum 0
      */
-  montantPaye?: number;
-  dateEcheance?: string;
-  situation?: EcheanceSituation;
+  montantPaye: number;
+  dateEcheance: string;
+  situation: EcheanceSituation;
   /** @nullable */
-  motifExoneration?: string | null;
+  motifExoneration: string | null;
+  /** Au moins une imputation (l'échéance n'est plus ajustable ni exonérable) */
+  imputee: boolean;
 }

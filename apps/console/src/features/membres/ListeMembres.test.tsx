@@ -103,12 +103,12 @@ describe('A2 — Liste des membres', () => {
     expect(screen.queryByRole('button', { name: /Importer/ })).not.toBeInTheDocument();
   });
 
-  it('propose Nouveau, Importer (désactivé) et Doublons (n) selon les permissions', async () => {
+  it('propose Nouveau, Importer et Doublons (n) selon les permissions', async () => {
     Object.assign(etatServeur.membres[1]!, { doublonProbable: true });
     rendreConsole('/membres', { session: session_secretaire() });
     expect(await screen.findByRole('link', { name: 'Doublons (1)' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Nouveau membre' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Importer (sprint 3)' })).toBeDisabled();
+    expect(screen.getByRole('link', { name: 'Importer' })).toHaveAttribute('href', '/membres/import');
   });
 
   it('refuse la route et masque le menu sans membre.lire', async () => {

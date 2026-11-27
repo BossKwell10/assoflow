@@ -5,28 +5,37 @@
  * API du backend AssoFlow (console web et app mobile). Conventions : voir docs/07-contrat-api.md. Toutes les routes sont préfixées par /v1. Montants en FCFA entiers. Dates ISO 8601 UTC.
  * OpenAPI spec version: 1.0.0
  */
+import type { StatistiquesCampagneParPeriodeItem } from './statistiquesCampagneParPeriodeItem';
 
 export interface StatistiquesCampagne {
-  campagneId?: string;
-  membresCibles?: number;
+  campagneId: string;
+  membresCibles: number;
   /**
      * Montant en FCFA (XOF), entier
      * @minimum 0
      */
-  montantAttendu?: number;
+  montantAttendu: number;
   /**
      * Montant en FCFA (XOF), entier
      * @minimum 0
      */
-  montantEchuAttendu?: number;
+  montantEchuAttendu: number;
   /**
      * Montant en FCFA (XOF), entier
      * @minimum 0
      */
-  montantRecouvre?: number;
+  montantRecouvre: number;
   /**
+     * Imputé sur les échéances échues (FCFA)
+     * @minimum 0
+     */
+  montantRecouvreEchu: number;
+  /**
+     * RG-RAP-002 ; `null` tant que rien n'est échu
      * @minimum 0
      * @maximum 1
+     * @nullable
      */
-  tauxRecouvrement?: number;
+  tauxRecouvrement: number | null;
+  parPeriode: StatistiquesCampagneParPeriodeItem[];
 }

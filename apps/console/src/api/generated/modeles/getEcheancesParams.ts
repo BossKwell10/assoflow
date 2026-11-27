@@ -6,12 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CurseurParameter } from './curseurParameter';
+import type { GetEcheancesSituation } from './getEcheancesSituation';
 import type { LimiteParameter } from './limiteParameter';
 
 export type GetEcheancesParams = {
   campagneId?: string;
   membreId?: string;
-  situation?: string;
+  situation?: GetEcheancesSituation;
   du?: string;
   au?: string;
   /**

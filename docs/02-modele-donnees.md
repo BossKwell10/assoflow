@@ -119,7 +119,7 @@ Solde d'un membre (vue `v_soldes_membres`) : `total_paye − total_exigible` (ex
 ### 3.7 Technique
 
 - `compteurs` + fonction `app_prochain_numero(type, annee)` : numérotation sans trou par tenant (verrou de ligne).
-- `taches` : exports et rapports asynchrones.
+- `taches` : exports, rapports et imports asynchrones (`progression`, `resultat` structuré ; clés `_…` internes, migration 0004).
 - `idempotence` : réponses mémorisées des `POST` console portant un `Idempotency-Key`.
 - `audit_log` : journal immuable chaîné (§6).
 

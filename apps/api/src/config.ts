@@ -38,6 +38,14 @@ const schema = z.object({
     .transform((v) => v === 'true'),
   /** Dossier du stockage local (développement, tests) ; défaut : dossier temporaire du système. */
   STOCKAGE_LOCAL_DIR: z.string().min(1).optional(),
+  /**
+   * Exécution des tâches asynchrones (docs/06) : `file` = files BullMQ consommées par le worker (production) ;
+   * `processus` = exécution dans le processus API, sans Redis (développement, tests). Défaut : `file` en
+   * production, `processus` ailleurs.
+   */
+  TACHES_EXECUTION: z.enum(['file', 'processus']).optional(),
+  /** Clé HMAC des QR codes de carte de membre (RG-MBR-008), 32 caractères minimum. */
+  QR_SIGNING_KEY: z.string().min(32).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   MIN_APP_VERSION: z
     .string()
@@ -71,6 +79,8 @@ export function chargerConfig(env: NodeJS.ProcessEnv = process.env): Config {
         'S3_BUCKET',
         'S3_ACCESS_KEY',
         'S3_SECRET_KEY',
+        'QR_SIGNING_KEY',
+        'REDIS_URL',
       ] as const
     ).filter((cle) => !config[cle]);
     if (manquantes.length > 0) {
@@ -79,6 +89,10 @@ export function chargerConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
   if (Boolean(config.JWT_PRIVATE_KEY) !== Boolean(config.JWT_PUBLIC_KEY)) {
     throw new Error('Configuration invalide — JWT_PRIVATE_KEY et JWT_PUBLIC_KEY vont de pair');
+  }
+  config.TACHES_EXECUTION ??= config.NODE_ENV === 'production' ? 'file' : 'processus';
+  if (config.TACHES_EXECUTION === 'file' && !config.REDIS_URL) {
+    throw new Error('Configuration invalide — TACHES_EXECUTION=file exige REDIS_URL');
   }
   return config;
 }
