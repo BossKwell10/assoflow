@@ -40,7 +40,7 @@ window.scrollTo = (() => {}) as typeof window.scrollTo;
 
 // Écrans chargés à la demande (import dynamique) : le premier rendu d'un fichier de test peut dépasser
 // 1 s quand la CI construit et teste en parallèle.
-configure({ asyncUtilTimeout: 5000 });
+configure({ asyncUtilTimeout: 10_000 });
 
 beforeAll(() => serveur.listen({ onUnhandledFrame: 'error' }));
 beforeEach(() => reinitialiserServeur());

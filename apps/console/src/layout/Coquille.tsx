@@ -23,9 +23,21 @@ export const MENU: { lien: string; cle: CleTexte; permissions: readonly Permissi
   { lien: '/', cle: 'menu.tableauDeBord', permissions: ['rapport.lire'] },
   { lien: '/membres', cle: 'menu.membres', permissions: ['membre.lire'] },
   { lien: '/cotisations/campagnes', cle: 'menu.cotisations', permissions: ['cotisation.lire'] },
+  { lien: '/cotisations/paiements', cle: 'menu.paiements', permissions: ['cotisation.lire'] },
+  {
+    lien: '/cotisations/paiements/saisie',
+    cle: 'menu.saisiePaiements',
+    permissions: ['paiement.enregistrer'],
+  },
   { lien: '/tresorerie', cle: 'menu.tresorerie', permissions: ['tresorerie.lire', 'depense.lire'] },
   { lien: '/depenses', cle: 'menu.depenses', permissions: ['depense.lire'] },
   { lien: '/projets', cle: 'menu.projets', permissions: ['projet.lire'] },
+  { lien: '/reunions', cle: 'menu.reunions', permissions: ['reunion.gerer'] },
+  {
+    lien: '/communication',
+    cle: 'menu.communication',
+    permissions: ['communication.annoncer', 'communication.modeles'],
+  },
   { lien: '/rapports', cle: 'menu.rapports', permissions: ['rapport.lire'] },
   {
     lien: '/parametres',
@@ -34,10 +46,17 @@ export const MENU: { lien: string; cle: CleTexte; permissions: readonly Permissi
   },
 ];
 
+/** Entrée de menu active : celle dont le lien est le plus long préfixe du chemin (Paiements ≠ Saisie). */
+export function lienActif(chemin: string): string | undefined {
+  return MENU.map((m) => m.lien)
+    .filter((l) => (l === '/' ? chemin === '/' : chemin === l || chemin.startsWith(`${l}/`)))
+    .sort((a, b) => b.length - a.length)[0];
+}
+
 function EntreeMenu({ entree, chemin }: { entree: (typeof MENU)[number]; chemin: string }) {
   const visible = useAuMoinsUnePermission(entree.permissions);
   if (!visible) return null;
-  const actif = entree.lien === '/' ? chemin === '/' : chemin.startsWith(entree.lien);
+  const actif = entree.lien === lienActif(chemin);
   return (
     <NavLink
       component={Link}

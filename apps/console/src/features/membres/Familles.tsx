@@ -242,9 +242,17 @@ export function FicheFamille() {
             {famille?.villageOrigine && <Text c="dimmed">{famille.villageOrigine}</Text>}
           </Stack>
           <Group gap="sm">
-            <Button variant="default" disabled>
-              {t('familles.paiementGroupeBientot')}
-            </Button>
+            {famille && (
+              <Si permission="paiement.enregistrer">
+                <Button
+                  component={Link}
+                  to="/cotisations/paiements/saisie"
+                  search={{ familleId: id } as never}
+                >
+                  {t('familles.paiementGroupe')}
+                </Button>
+              </Si>
+            )}
             {famille && (
               <Si permission="membre.modifier">
                 <Button variant="default" onClick={() => setEdition(true)}>

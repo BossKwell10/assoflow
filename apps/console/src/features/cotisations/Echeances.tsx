@@ -10,8 +10,16 @@ import {
   Title,
 } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { useGetCampagnes, useGetEcheances } from '../../api/generated/cotisations/cotisations';
-import type { Echeance, GetEcheancesParams } from '../../api/generated/modeles';
+import { useState } from 'react';
+import {
+  postEcheancesRelancer,
+  useGetCampagnes,
+  useGetEcheances,
+} from '../../api/generated/cotisations/cotisations';
+import type { Diffusion, Echeance, GetEcheancesParams } from '../../api/generated/modeles';
+import { Si } from '../../auth/Si';
+import { ConfirmationAction } from '../../shared/ConfirmationAction';
+import { ResultatDiffusion } from '../../shared/ResultatDiffusion';
 import { t } from '../../i18n';
 import { telechargerFichier, versCsv } from '../../shared/csv';
 import { formatDate } from '../../shared/format';
@@ -40,6 +48,10 @@ export function Echeances() {
     }).filter(([, v]) => v !== undefined),
   ) as GetEcheancesParams;
   const liste = useGetEcheances(parametres);
+  const [relance, setRelance] = useState<Echeance[]>();
+  const [diffusion, setDiffusion] = useState<Diffusion>();
+  // Estimation : un SMS par membre (montants regroupés, RG-COT-050).
+  const membresRelance = new Set((relance ?? []).map((e) => e.membreId)).size;
 
   const colonnes: Colonne<Echeance>[] = [
     { cle: 'date', titre: t('echeances.colDate'), rendu: (e) => formatDate(e.dateEcheance) },
@@ -151,10 +163,28 @@ export function Echeances() {
         erreur={liste.error}
         pagination={{ ...pagination, curseurSuivant: liste.data?.page.curseurSuivant }}
         actionsSelection={(selection) => (
-          <Button size="xs" variant="default" onClick={() => exporter(selection)}>
-            {t('echeances.exporterSelection')}
-          </Button>
+          <>
+            <Button size="xs" variant="default" onClick={() => exporter(selection)}>
+              {t('echeances.exporterSelection')}
+            </Button>
+            <Si permission="cotisation.gerer">
+              <Button size="xs" onClick={() => setRelance(selection)}>
+                {t('relance.relancer')}
+              </Button>
+            </Si>
+          </>
         )}
+      />
+      <ResultatDiffusion diffusion={diffusion} />
+      <ConfirmationAction
+        ouvert={relance !== undefined}
+        onFermer={() => setRelance(undefined)}
+        titre={t('relance.titre')}
+        resume={t('relance.resume', { echeances: relance?.length ?? 0, membres: membresRelance })}
+        libelleConfirmer={t('relance.envoyer')}
+        onConfirmer={async () => {
+          setDiffusion(await postEcheancesRelancer({ echeanceIds: (relance ?? []).map((e) => e.id) }));
+        }}
       />
     </Stack>
   );

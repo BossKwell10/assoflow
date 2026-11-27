@@ -43,6 +43,7 @@ import {
   useAffichageTelephone,
   useReferentielsMembres,
 } from './commun';
+import { PaiementsMembre } from '../paiements/PaiementsMembre';
 import { HistoriqueMembre, InformationsMembre, SituationMembre } from './OngletsFiche';
 
 type Action = 'suspendre' | 'reactiver' | 'desactiver' | 'anonymiser';
@@ -155,6 +156,17 @@ export function FicheMembre() {
                 </Button>
               </Si>
             )}
+            {!m.anonymise && m.etat !== 'desactive' && (
+              <Si permission="paiement.enregistrer">
+                <Button
+                  component={Link}
+                  to="/cotisations/paiements/saisie"
+                  search={{ membreId: id } as never}
+                >
+                  {t('paiements.enregistrerPaiement')}
+                </Button>
+              </Si>
+            )}
             {/* RF-023 : carte PDF (refusée pour une fiche anonymisée ou désactivée). */}
             {!m.anonymise && m.etat !== 'desactive' && (
               <Button variant="default" loading={carteEnCours} onClick={() => void ouvrirCarte()}>
@@ -241,7 +253,7 @@ export function FicheMembre() {
           <SituationMembre situation={situation} />
         </Tabs.Panel>
         <Tabs.Panel value="paiements" pt="lg">
-          <Bientot sprint="sprint 4" />
+          <PaiementsMembre membreId={id} />
         </Tabs.Panel>
         <Tabs.Panel value="historique" pt="lg">
           <HistoriqueMembre id={id} />

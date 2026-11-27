@@ -10,5 +10,5 @@ import type { PostReunionsIdConvoquerBodyCible } from './postReunionsIdConvoquer
 
 export type PostReunionsIdConvoquerBody = {
   canaux?: PostReunionsIdConvoquerBodyCanauxItem[];
-  cible?: PostReunionsIdConvoquerBodyCible;
+  cible: PostReunionsIdConvoquerBodyCible;
 };

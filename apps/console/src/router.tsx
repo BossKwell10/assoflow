@@ -15,6 +15,8 @@ import { t } from './i18n';
 import { Coquille } from './layout/Coquille';
 import { validerRechercheCampagnes, validerRechercheEcheances } from './features/cotisations/recherche';
 import { validerRechercheFamilles, validerRechercheMembres } from './features/membres/recherche';
+import { validerRechercheCommunication } from './features/communication/recherche';
+import { validerRecherchePaiements, validerRechercheSaisie } from './features/paiements/recherche';
 import { APlusTard } from './routes/APlusTard';
 
 const rechercheRedirection = (recherche: Record<string, unknown>): { redirect?: string } =>
@@ -163,6 +165,35 @@ const echeances = createRoute({
   ),
 });
 
+// --- Paiements (A11, A12), communication (A21, A22), réunions (E6-08) : sprint 4
+const paiements = createRoute({
+  getParentRoute: () => espace,
+  path: '/cotisations/paiements',
+  validateSearch: validerRecherchePaiements,
+  component: protege(
+    'cotisation.lire',
+    lazyRouteComponent(() => import('./features/paiements/ListePaiements'), 'ListePaiements'),
+  ),
+});
+const saisiePaiements = createRoute({
+  getParentRoute: () => espace,
+  path: '/cotisations/paiements/saisie',
+  validateSearch: validerRechercheSaisie,
+  component: protege(
+    'paiement.enregistrer',
+    lazyRouteComponent(() => import('./features/paiements/SaisiePaiements'), 'SaisiePaiements'),
+  ),
+});
+const communication = createRoute({
+  getParentRoute: () => espace,
+  path: '/communication',
+  validateSearch: validerRechercheCommunication,
+  component: protege(
+    ['communication.annoncer', 'communication.modeles'],
+    lazyRouteComponent(() => import('./features/communication/Communication'), 'Communication'),
+  ),
+});
+
 export const routeTree = racine.addChildren([
   connexion,
   motDePasseOublie,
@@ -197,6 +228,14 @@ export const routeTree = racine.addChildren([
     cotisations,
     campagnes,
     echeances,
+    paiements,
+    saisiePaiements,
+    communication,
+    ecran(
+      '/reunions',
+      'reunion.gerer',
+      lazyRouteComponent(() => import('./features/reunions/Reunions'), 'Reunions'),
+    ),
     ecran(
       '/cotisations/campagnes/nouvelle',
       'cotisation.gerer',
