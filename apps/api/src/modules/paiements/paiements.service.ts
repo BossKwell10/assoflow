@@ -101,6 +101,12 @@ const SELECT_PAIEMENT = `
 /** `AAAA-MM-JJ` (GMT, fuseau de la Côte d'Ivoire) d'un horodatage. */
 const jourGmt = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
 
+export interface OptionsCreation {
+  /** Paiement poussé par un appareil (docs/05 §5.2) : confirmation faite sur l'appareil, horloge corrigée. */
+  synchronisation?: boolean;
+  prefixeAppareil?: string;
+}
+
 export interface FiltresPaiements {
   membreId?: string;
   familleId?: string;
@@ -284,7 +290,11 @@ export class PaiementsService {
    * Enregistre un paiement (mode connecté). L'id du client est la clé d'idempotence : même id et même corps →
    * le paiement existant (`cree: false`) ; corps différent → 409. Le SMS de reçu part après le commit.
    */
-  async creer(auth: AuthRequete, p: PaiementCreation): Promise<{ dto: unknown; cree: boolean }> {
+  async creer(
+    auth: AuthRequete,
+    p: PaiementCreation,
+    options: OptionsCreation = {},
+  ): Promise<{ dto: Awaited<ReturnType<PaiementsService['dto']>>; cree: boolean }> {
     const { confirmationMontantEleve, ...contenu } = p;
     const emp = empreinte(contenu);
     let notification: ResultatPreparation | null = null;
@@ -299,14 +309,31 @@ export class PaiementsService {
         return { dto: await this.dto(tx, auth, p.id), cree: false };
       }
       // RG-COT-031 : confirmation explicite au-delà de 500 000 FCFA.
-      if (confirmationMontantRequise(p.montant) && !confirmationMontantEleve) {
+      if (confirmationMontantRequise(p.montant) && !confirmationMontantEleve && !options.synchronisation) {
         const message = 'Montant supérieur à 500 000 FCFA : confirmez explicitement le paiement';
         throw new ErreurMetier('CONFIRMATION_REQUISE', message, [
           { champ: 'confirmationMontantEleve', code: 'MONTANT_ELEVE', message },
         ]);
       }
-      const datePaiement = new Date(p.datePaiement);
-      if (datePaiement.getTime() > Date.now() + 5 * 60_000) {
+      let datePaiement = new Date(p.datePaiement);
+      let dateDeclaree: string | null = null;
+      if (options.synchronisation) {
+        // docs/05 §5.2 : horloge de l'appareil non fiable — au-delà de 10 min d'avance, heure serveur (audit).
+        if (datePaiement.getTime() > Date.now() + 10 * 60_000) {
+          dateDeclaree = p.datePaiement;
+          datePaiement = new Date();
+        }
+        // RG-NUM-002 : le numéro provisoire porte le préfixe de l'appareil qui a encaissé.
+        if (p.numeroRecuProvisoire && options.prefixeAppareil) {
+          if (!p.numeroRecuProvisoire.startsWith(`${options.prefixeAppareil}-`)) {
+            throw invalide(
+              'numeroRecuProvisoire',
+              'PREFIXE_APPAREIL',
+              `Le numéro provisoire doit commencer par le préfixe de l’appareil (${options.prefixeAppareil})`,
+            );
+          }
+        }
+      } else if (datePaiement.getTime() > Date.now() + 5 * 60_000) {
         throw invalide('datePaiement', 'DATE_FUTURE', 'La date du paiement ne peut pas être dans le futur');
       }
       const date = jourGmt(datePaiement);
@@ -442,7 +469,9 @@ export class PaiementsService {
           montant: p.montant,
           mode: p.mode,
           compteId: p.compteId,
-          datePaiement: p.datePaiement,
+          datePaiement: datePaiement.toISOString(),
+          ...(dateDeclaree ? { dateDeclareeParAppareil: dateDeclaree } : {}),
+          ...(options.synchronisation ? { source: 'synchronisation' } : {}),
           imputations: ventilation.lignes.length,
           avance: ventilation.avance,
         },

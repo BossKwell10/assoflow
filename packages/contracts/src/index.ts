@@ -11,3 +11,4 @@ export * from './statuts.js';
 export * from './cotisations.js';
 export * from './paiements.js';
 export * from './notifications.js';
+export * from './sync.js';

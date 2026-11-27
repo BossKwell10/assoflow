@@ -1,7 +1,12 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DUREE_URL_LECTURE_S, verifierCle, type StockageObjets } from './stockage-objets.js';
+import {
+  DUREE_URL_ECRITURE_S,
+  DUREE_URL_LECTURE_S,
+  verifierCle,
+  type StockageObjets,
+} from './stockage-objets.js';
 
 const TYPES_PAR_EXTENSION: Record<string, string> = {
   png: 'image/png',
@@ -47,6 +52,41 @@ export class StockageLocal implements StockageObjets {
     const exp = Math.floor(maintenant / 1000) + DUREE_URL_LECTURE_S;
     const jeton = Buffer.from(verifierCle(cle)).toString('base64url');
     return `${this.baseUrl.replace(/\/$/, '')}/v1/fichiers?c=${jeton}&exp=${exp}&sig=${this.signer(cle, exp)}`;
+  }
+
+  /** Envoi direct au stockage local (`PUT /v1/fichiers?…`), signé comme une URL présignée S3. */
+  async urlEcriture(cle: string, typeMime: string, maintenant = Date.now()) {
+    const exp = Math.floor(maintenant / 1000) + DUREE_URL_ECRITURE_S;
+    const jeton = Buffer.from(verifierCle(cle)).toString('base64url');
+    const sig = this.signer(`ecriture|${cle}|${typeMime}`, exp);
+    return {
+      url: `${this.baseUrl.replace(/\/$/, '')}/v1/fichiers?c=${jeton}&exp=${exp}&sig=${sig}`,
+      entetes: { 'content-type': typeMime },
+    };
+  }
+
+  /** Écrit un fichier envoyé par `PUT` si la signature (clé, type, échéance) est valide ; `false` sinon. */
+  async ecrire(
+    jeton: string | undefined,
+    exp: string | undefined,
+    sig: string | undefined,
+    typeMime: string | undefined,
+    contenu: Buffer,
+  ): Promise<boolean> {
+    let cle: string;
+    if (!jeton || !typeMime) return false;
+    try {
+      cle = verifierCle(Buffer.from(jeton, 'base64url').toString('utf8'));
+    } catch {
+      return false;
+    }
+    const expiration = Number(exp);
+    if (!sig || !Number.isInteger(expiration) || expiration < Date.now() / 1000) return false;
+    const attendu = Buffer.from(this.signer(`ecriture|${cle}|${typeMime}`, expiration));
+    const recu = Buffer.from(sig);
+    if (attendu.length !== recu.length || !timingSafeEqual(attendu, recu)) return false;
+    await this.deposer(cle, contenu);
+    return true;
   }
 
   /** Lit un fichier si la signature est valide et non expirée ; `null` sinon (→ 404). */

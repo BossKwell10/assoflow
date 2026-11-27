@@ -197,3 +197,18 @@ Un élément qui référence un élément rejeté du même lot est rejeté avec 
   aucun pull ne manque de ligne.
 - Push contenant un membre rejeté et un paiement qui le référence → deux rejets, le reste du lot accepté.
 - Appareil hors ligne 30 jours avec 300 opérations → push en lots de 50, tous traités en < 30 s.
+
+## 11. Précisions d'implémentation (sprint 5)
+
+| Sujet | Implémentation |
+| --- | --- |
+| Appareil exigé | `/sync/pull`, `/sync/push`, acquittement : jeton portant `dev` d'un appareil non révoqué de l'association active, appartenant à l'utilisateur (sinon `403 PERMISSION_REFUSEE`). L'en-tête `X-Appareil-Id` n'est pas utilisé : l'appareil vient du jeton. |
+| Versions (§8) | `VERSION_SCHEMA_SYNC = 1` (`packages/contracts`), N-1 accepté quand il existera ; `versionApp` comparé à `MIN_APP_VERSION`. |
+| Périmètre (§2) | Vue « bureau » = permission `membre.lire` ; sinon vue « membre » (sa fiche, sa famille, ses ayants droit, échéances, paiements, imputations et présences ; campagnes, projets, annonces et réunions de l'association). `mouvements` exige `tresorerie.lire`, `depenses` exige `depense.lire`. L'association (une ligne) est renvoyée à chaque pull. Empreinte du périmètre = SHA-256 des permissions effectives triées ; un curseur supérieur au compteur du tenant (base restaurée) déclenche aussi `reinitialiser`. |
+| Pagination (§3-4) | Borne de page = `limite`-ième version au-delà du curseur, toutes tables confondues (versions uniques par tenant) : chaque page contient exactement `limite` lignes, la dernière va jusqu'au compteur courant. |
+| Format | Colonnes `snake_case` de la base, sans `association_id`, `sync_version`, `deleted_at`, `empreinte_creation`, `cle_stockage` ni `photo_cle` (remplacée par `a_photo`). Dates et horodatages en ms epoch, `bigint` en nombre, tableaux et JSON en texte JSON, `id` toujours en texte. |
+| Push (§5) | Chaque élément dans **sa propre transaction** (pas de savepoints) via les services de la console : mêmes règles, même audit, même idempotence (empreinte des champs envoyés). Modification : seuls les champs de `_changed` ; `numero`, `etat`, `statut_adhesion`, `user_id` et `date_adhesion` ignorés. Création de membre : `consentement_traitement: true` exigé (consentement canal `mobile`), doublon probable accepté et marqué `a_verifier`. Paiement : confirmation au-delà de 500 000 FCFA réputée faite sur l'appareil ; numéro provisoire exigé au préfixe de l'appareil ; date > heure serveur + 10 min remplacée (audit `dateDeclareeParAppareil`). Ayants droit : suppression permise (`membre.modifier`). Présences : création/modification (`reunion.gerer`), une ligne par (réunion, membre). Erreur inattendue : `statut = rejete`, `code = ERREUR_INTERNE`, **non enregistrée** (l'appareil renverra l'élément). |
+| **Écart** — dépenses | Push de `depenses` refusé (`OPERATION_INTERDITE`) jusqu'au module dépenses (sprint 6). |
+| Rejets (§6) | Enregistrés par (appareil, table, id) ; un élément créé déjà rejeté reçoit le même rejet sans retraitement ; un nouveau rejet sur une modification remplace le précédent. Console : `GET /v1/sync/rejets` (A32). |
+| Mesures (§9) | Métrique `sync_octets_total` non livrée (sprint 8). Compression des réponses à configurer dans Traefik. |
+

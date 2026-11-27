@@ -503,7 +503,15 @@ export class AuthService {
     }
     const user = await this.db.tx((tx) => this.chargerUser(tx, r.userId), { ...ctx, userId: r.userId });
     const acces = await this.mesAcces(r.userId);
-    return this.emettre(user!, canalTransport, r.session, r.associationId ?? undefined, acces);
+    // La session liée à un appareil (sprint 5) garde la claim `dev` au refresh.
+    return this.emettre(
+      user!,
+      canalTransport,
+      r.session,
+      r.associationId ?? undefined,
+      acces,
+      r.appareilId ?? undefined,
+    );
   }
 
   async deconnecter(auth: AuthRequete): Promise<void> {
@@ -598,12 +606,14 @@ export class AuthService {
     session: NouvelleSession,
     aid: string | undefined,
     acces: LigneMesAcces[],
+    appareilId?: string,
   ): Promise<SessionEmise> {
     const { jeton, expireDans } = await this.jetons.signerAcces({
       sub: user.id,
       sid: session.sessionId,
       aid,
       can: canal,
+      dev: appareilId,
       pf: user.role_plateforme ?? undefined,
     });
     return {

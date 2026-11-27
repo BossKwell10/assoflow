@@ -13,6 +13,7 @@ import { MembresModule } from './modules/membres/membres.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { PaiementsModule } from './modules/paiements/paiements.module.js';
 import { ReunionsModule } from './modules/reunions/reunions.module.js';
+import { SyncModule } from './modules/sync/sync.module.js';
 import { TresorerieModule } from './modules/tresorerie/tresorerie.module.js';
 import { TachesModule } from './modules/taches/taches.module.js';
 import { UtilisateursModule } from './modules/utilisateurs/utilisateurs.module.js';
@@ -30,6 +31,7 @@ import { UtilisateursModule } from './modules/utilisateurs/utilisateurs.module.j
     TresorerieModule,
     PaiementsModule,
     ReunionsModule,
+    SyncModule,
   ],
   controllers: [HealthController],
   providers: [

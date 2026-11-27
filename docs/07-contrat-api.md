@@ -1,6 +1,6 @@
 # 07 — Contrat d'API
 
-Le contrat de référence est [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1, 184 opérations, validé avec
+Le contrat de référence est [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1, 185 opérations, validé avec
 `openapi-spec-validator`). Le client TypeScript de la console est **généré** à partir de ce fichier (orval) ;
 le backend vérifie en CI que ses routes correspondent au contrat (test de conformité, voir 09). Toute modification
 d'API commence par une modification de `openapi.yaml` dans la même merge request.
@@ -317,6 +317,7 @@ Généré depuis `openapi.yaml` ; la colonne « Exigences » renvoie au cahier d
 | --- | --- | --- | --- | --- |
 | `POST` | `/v1/sync/pull` | authentifié (appareil) | Récupérer les changements depuis un curseur | RNF-001, RNF-014 |
 | `POST` | `/v1/sync/push` | authentifié (appareil) + permissions par élément | Envoyer les écritures locales | RNF-001, RNF-014 |
+| `GET` | `/v1/sync/rejets` | `utilisateur.lire` | Rejets de synchronisation par appareil (A32) | RF-SUP-033 |
 | `POST` | `/v1/sync/rejets/{id}/acquitter` | authentifié (appareil) | Acquitter un rejet |  |
 | `GET` | `/v1/appareils` | `utilisateur.lire` | Appareils et état de synchronisation | RF-SUP-033 |
 | `POST` | `/v1/appareils/{id}/revoquer` | `utilisateur.gerer` | Révoquer un appareil (et purger) | RF-ADM-014 |

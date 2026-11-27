@@ -215,3 +215,14 @@ sauf mention « écart ».
 | Consentement (§8) | `POST /membres` exige `consentement` (`traitementDonnees: true`, canal `console` ou `papier`) : une ligne `consentements` (`traitement_donnees`, version `VERSION_CGU`, `recueilli_par` = auteur). |
 | Accès app d'un membre | `POST /membres/{id}/acces-app` réutilise l'invitation (§2.1) avec le rôle système `membre` et lie la fiche (`acces_association.membre_id`, `membres.user_id`). |
 | Audit des membres (§7) | `membre.cree` (valeurs saisies), `membre.modifie` (champs modifiés seulement, avant/après), `membre.suspendu`, `membre.desactive`, `membre.reactive`, `membre.anonymise` (numéro et motif, aucune donnée personnelle), `membre.photo_modifiee`, `membre.doublon_ecarte`, `membre.passe_dormant` ; familles, ayants droit, catégories, exercices et paramètres de l'association de même. Téléphones toujours masqués. |
+
+## 13. Précisions d'implémentation (sprint 5)
+
+| Sujet | Implémentation |
+| --- | --- |
+| Appareil, second facteur mobile (§1, RF-003) | Après la connexion mobile : OTP `confirmation_appareil` → `POST /auth/appareils` (jeton OTP à usage unique, même utilisateur, session mobile avec association active). L'appareil est créé dans l'association active (préfixe de reçu RG-NUM-003), la session lui est liée et un jeton d'accès portant `dev` est renvoyé ; le refresh conserve `dev`. `appareilId` permet de rattacher un appareil existant (réinstallation) sans nouveau préfixe. Un appareil appartient à une association : changer de contexte impose d'enregistrer l'appareil dans l'autre association. |
+| **Écart** — second facteur | Les routes de la console et de l'API restent accessibles avec un jeton mobile sans `dev` (comportement des sprints 1 à 4) ; seules `/sync/*` l'exigent (`403 PERMISSION_REFUSEE`). Imposer l'appareil à toutes les écritures mobiles du bureau est à décider avant le pilote. |
+| Révocation d'appareil (§3, RF-ADM-014) | `POST /appareils/{id}/revoquer` révoque l'appareil et ses sessions ; le guard vérifie l'appareil de la claim `dev` à chaque requête (`401 APPAREIL_REVOQUE`, `erreurs[0].code = PURGE_DEMANDEE` si purge). Un refresh d'une session révoquée reçoit `401 SESSION_REVOQUEE` (sans indication de purge). |
+| Pièces jointes (§8) | Fichier envoyé directement au stockage par `PUT` présigné (10 min, type et chiffrement signés) ; le serveur vérifie taille, SHA-256 et type réel (octets de signature) à la confirmation. Hors production, `PUT /v1/fichiers` signé HMAC remplace l'URL présignée. **Écart** : pas de recompression côté serveur (l'app compresse, docs/05 §7). |
+| Limites de débit (§9) | `/v1/sync/push` 30/min par appareil : à configurer dans Traefik (non appliqué par l'API au sprint 5). Taille de lot plafonnée à 500 éléments par l'API. |
+

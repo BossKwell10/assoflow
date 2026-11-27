@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
+import { MIMES_PIECE_JOINTE, TAILLE_MAX_PIECE_JOINTE } from '@assoflow/contracts';
 import { AppModule } from './app.module.js';
 import { contexteStorage } from './common/contexte.js';
 import { TAILLE_MAX_IMAGE } from './common/images.js';
@@ -27,6 +28,12 @@ export async function creerApplication(options: { logger?: boolean } = {}): Prom
   });
   app.setGlobalPrefix('v1', { exclude: ['health/live', 'health/ready'] });
   const fastify = app.getHttpAdapter().getInstance();
+  // Pièces jointes envoyées par `PUT` signé au stockage local (hors production, docs/05 §7) : corps brut.
+  fastify.addContentTypeParser(
+    [...MIMES_PIECE_JOINTE],
+    { parseAs: 'buffer', bodyLimit: TAILLE_MAX_PIECE_JOINTE },
+    (_req, corps, fait) => fait(null, corps),
+  );
   fastify.addHook('onRequest', (req, reply, done) => {
     void reply.header('x-request-id', req.id);
     contexteStorage.enterWith({ requestId: String(req.id), ip: req.ip });

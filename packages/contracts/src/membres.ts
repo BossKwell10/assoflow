@@ -64,7 +64,7 @@ export const membreCreationSchema = z.object({
   dateAdhesion: date.optional(),
   consentement: z.object({
     traitementDonnees: z.literal(true, 'Le consentement au traitement des données est obligatoire'),
-    canal: z.enum(['console', 'papier']),
+    canal: z.enum(['console', 'papier', 'mobile']),
   }),
   confirmationDoublon: z.boolean().optional(),
 });

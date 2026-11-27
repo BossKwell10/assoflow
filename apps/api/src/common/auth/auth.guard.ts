@@ -98,6 +98,8 @@ export class AuthGuard implements CanActivate {
       throw new ErreurMetier('PERMISSION_REFUSEE', 'Aucune association active : choisissez un contexte');
     }
     // Session non révoquée (déconnexion, réutilisation de refresh) et compte actif.
+    // Appareil révoqué (docs/05 §8) : 401 APPAREIL_REVOQUE avant tout autre motif (ses sessions le sont aussi).
+    if (c.dev && c.aid) await this.sessions.verifierAppareil(c.dev, contexte);
     await this.sessions.verifierActive(c.sid, c.sub);
     return true;
   }

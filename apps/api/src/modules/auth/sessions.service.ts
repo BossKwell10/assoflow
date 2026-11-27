@@ -1,3 +1,4 @@
+import type { ContexteRequete } from '../../common/contexte.js';
 import { Injectable } from '@nestjs/common';
 import type { Canal } from '@assoflow/contracts';
 import { ErreurMetier } from '../../common/erreur-metier.js';
@@ -202,6 +203,36 @@ export class SessionsService {
    * Vérifie, à chaque requête authentifiée, que la session du jeton n'est pas révoquée et que l'utilisateur
    * est actif (déconnexion, réutilisation de refresh, révocation d'accès → 401 SESSION_REVOQUEE).
    */
+  /**
+   * Appareil du jeton (claim `dev`) : refusé s'il est révoqué, avec l'indication de purge des données locales
+   * (`erreurs[0].code = PURGE_DEMANDEE`). Lu sous RLS dans le tenant du jeton.
+   */
+  async verifierAppareil(appareilId: string, contexte: ContexteRequete): Promise<void> {
+    const a = await this.db.tx(async (tx) => {
+      const r = await tx.query<{ revoque: boolean; purge: boolean }>(
+        `SELECT revoque_at IS NOT NULL AS revoque, purge_demandee AS purge FROM appareils WHERE id = $1`,
+        [appareilId],
+      );
+      return r.rows[0];
+    }, contexte);
+    if (a?.revoque) {
+      const message = 'Cet appareil a été révoqué : reconnectez-vous depuis un appareil autorisé';
+      throw new ErreurMetier(
+        'APPAREIL_REVOQUE',
+        message,
+        a.purge
+          ? [
+              {
+                champ: 'appareil',
+                code: 'PURGE_DEMANDEE',
+                message: 'Effacez les données locales de l’appareil',
+              },
+            ]
+          : [],
+      );
+    }
+  }
+
   async verifierActive(sessionId: string, userId: string): Promise<void> {
     const ok = await this.db.tx(async (tx) => {
       const r = await tx.query(

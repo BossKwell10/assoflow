@@ -25,6 +25,6 @@ import { MembresService } from './membres.service.js';
     ImportMembresService,
     CarteMembreService,
   ],
-  exports: [DormanceService, MembresService, CarteMembreService],
+  exports: [DormanceService, MembresService, CarteMembreService, FamillesService, AyantsDroitService],
 })
 export class MembresModule {}

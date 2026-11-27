@@ -297,5 +297,6 @@ export class AvancesPlanifiees implements OnModuleInit {
   imports: [CotisationsModule, MembresModule, NotificationsModule, TresorerieModule],
   controllers: [PaiementsController, RapportsController],
   providers: [PaiementsService, RecuService, ExportsService, AvancesPlanifiees],
+  exports: [PaiementsService],
 })
 export class PaiementsModule {}

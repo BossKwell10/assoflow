@@ -1,6 +1,11 @@
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { DUREE_URL_LECTURE_S, verifierCle, type StockageObjets } from './stockage-objets.js';
+import {
+  DUREE_URL_ECRITURE_S,
+  DUREE_URL_LECTURE_S,
+  verifierCle,
+  type StockageObjets,
+} from './stockage-objets.js';
 
 export interface OptionsS3 {
   endpoint?: string;
@@ -50,6 +55,21 @@ export class StockageS3 implements StockageObjets {
       if ((e as { name?: string }).name === 'NoSuchKey') return null;
       throw e;
     }
+  }
+
+  /** `PUT` présigné : type et chiffrement côté serveur signés, donc imposés au client par les en-têtes. */
+  async urlEcriture(cle: string, typeMime: string) {
+    const url = await getSignedUrl(
+      this.client,
+      new PutObjectCommand({
+        Bucket: this.options.bucket,
+        Key: verifierCle(cle),
+        ContentType: typeMime,
+        ServerSideEncryption: 'AES256',
+      }),
+      { expiresIn: DUREE_URL_ECRITURE_S, signableHeaders: new Set(['content-type']) },
+    );
+    return { url, entetes: { 'content-type': typeMime, 'x-amz-server-side-encryption': 'AES256' } };
   }
 
   urlLecture(cle: string): Promise<string> {

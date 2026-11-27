@@ -423,7 +423,12 @@ paths:
       - Authentification
       summary: Enregistrer un appareil mobile
       operationId: post_auth_appareils
-      description: 'Exigences : RNF-001.'
+      description: 'Exigences : RNF-001, RG-NUM-003. Jeton d''accès mobile avec association active + `jetonOtp` obtenu
+        par `POST /auth/otp/verifier` (but `confirmation_appareil`) pour le même utilisateur. Crée l''appareil dans
+        l''association active et lui attribue un préfixe de reçu (lettre + 2 chiffres, unique, jamais réattribué), lie
+        la session à l''appareil et renvoie un jeton d''accès portant la claim `dev` (exigée par `/sync/*`). Avec
+        `appareilId` (appareil existant, non révoqué, du même utilisateur) : rattache la session sans nouveau
+        préfixe (200). Le second facteur du bureau sur mobile est l''appareil enregistré (docs/04 §1).'
       requestBody:
         required: true
         content:
@@ -432,11 +437,17 @@ paths:
               $ref: '#/components/schemas/EnregistrementAppareil'
       responses:
         '201':
-          description: Succès
+          description: Appareil créé
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Appareil'
+                $ref: '#/components/schemas/AppareilEnregistre'
+        '200':
+          description: Appareil existant rattaché à la session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppareilEnregistre'
         '401':
           $ref: '#/components/responses/NonAuthentifie'
         '403':
@@ -3482,7 +3493,10 @@ paths:
       - Fichiers
       summary: Déclarer une pièce jointe
       operationId: post_pieces_jointes
-      description: 'Permission : `authentifié + droit d''écriture sur l''entité`. Exigences : RF-041, RF-054.'
+      description: 'Permission : `authentifié + droit d''écriture sur l''entité` (`membre` → `membre.modifier`,
+        `paiement` → `paiement.enregistrer`, `depense` → `depense.creer`, `projet` → `projet.gerer`). Exigences : RF-041,
+        RF-054. `id` client (idempotence : même corps → 200, corps différent → 409). Entité introuvable → 422
+        `REFERENCE_INVALIDE`. Même traitement que le push de `pieces_jointes` (docs/05 §7).'
       requestBody:
         required: true
         content:
@@ -3510,6 +3524,8 @@ paths:
       - Fichiers
       summary: URL présignée d'envoi
       operationId: post_pieces_jointes_id_url_upload
+      description: 'Déposant de la pièce ou titulaire du droit d''écriture sur l''entité. URL présignée `PUT` valable
+        10 min, à envoyer avec les `entetes` fournis (`content-type`). Pièce déjà reçue → 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -3540,6 +3556,9 @@ paths:
       - Fichiers
       summary: Confirmer la réception du fichier
       operationId: post_pieces_jointes_id_confirmer
+      description: 'Vérifie la présence du fichier, sa taille, son SHA-256 et son type réel (octets de signature) :
+        `recu`, sinon `rejete` (422 `VALIDATION`, code `FICHIER_ABSENT`, `TAILLE_DIFFERENTE`, `EMPREINTE_DIFFERENTE`
+        ou `TYPE_FICHIER_INVALIDE`). Idempotent pour une pièce déjà reçue.'
       parameters:
       - name: id
         in: path
@@ -3570,6 +3589,8 @@ paths:
       - Fichiers
       summary: URL présignée de lecture
       operationId: get_pieces_jointes_id_url_telechargement
+      description: 'Droit de lecture sur l''entité (`membre.lire`, `cotisation.lire`, `depense.lire`, `projet.lire`).
+        URL de lecture de 5 min ; pièce pas encore reçue → 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -4794,7 +4815,11 @@ paths:
       - Synchronisation
       summary: Récupérer les changements depuis un curseur
       operationId: post_sync_pull
-      description: 'Permission : `authentifié (appareil)`. Exigences : RNF-001, RNF-014.'
+      description: 'Permission : `authentifié (appareil)` : jeton portant la claim `dev` d''un appareil non révoqué de
+        l''association active (sinon 403 `PERMISSION_REFUSEE`, ou 401 `APPAREIL_REVOQUE`). Exigences : RNF-001,
+        RNF-014. Périmètre selon le rôle (docs/05 §2) : vue « bureau » si `membre.lire`, sinon vue « membre ». 426
+        `APP_OBSOLETE` (`versionApp` < `MIN_APP_VERSION`) ou `SCHEMA_OBSOLETE` (version de schéma ni courante ni
+        précédente). Autorisé pour un tenant suspendu.'
       requestBody:
         required: true
         content:
@@ -4825,7 +4850,10 @@ paths:
       - Synchronisation
       summary: Envoyer les écritures locales
       operationId: post_sync_push
-      description: 'Permission : `authentifié (appareil) + permissions par élément`. Exigences : RNF-001, RNF-014.'
+      description: 'Permission : `authentifié (appareil) + permissions par élément`. Exigences : RNF-001, RNF-014.
+        500 éléments au plus par lot (422 sinon). Chaque élément est traité dans sa propre transaction et reçoit un
+        résultat (docs/05 §5) ; un rejet est enregistré et renvoyé par les pulls de cet appareil jusqu''à acquittement.
+        423 `TENANT_SUSPENDU` pour un tenant suspendu.'
       requestBody:
         required: true
         content:
@@ -4853,13 +4881,49 @@ paths:
           $ref: '#/components/responses/Invalide'
         default:
           $ref: '#/components/responses/Erreur'
+  /sync/rejets:
+    get:
+      tags:
+      - Synchronisation
+      summary: Rejets de synchronisation (console)
+      operationId: get_sync_rejets
+      description: 'Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Écran A32 : rejets par appareil, plus
+        récents d''abord ; non acquittés seulement par défaut.'
+      parameters:
+      - name: appareilId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: inclureAcquittes
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - $ref: '#/components/parameters/Limite'
+      - $ref: '#/components/parameters/Curseur'
+      responses:
+        '200':
+          description: Page de résultats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageRejetSync'
+        '401':
+          $ref: '#/components/responses/NonAuthentifie'
+        '403':
+          $ref: '#/components/responses/Interdit'
+        default:
+          $ref: '#/components/responses/Erreur'
   /sync/rejets/{id}/acquitter:
     post:
       tags:
       - Synchronisation
       summary: Acquitter un rejet
       operationId: post_sync_rejets_id_acquitter
-      description: 'Permission : `authentifié (appareil)`.'
+      description: 'Permission : `authentifié (appareil)`. Seulement un rejet de l''appareil du jeton (404 sinon) ;
+        idempotent.'
       parameters:
       - name: id
         in: path
@@ -4886,7 +4950,8 @@ paths:
       - Synchronisation
       summary: Appareils et état de synchronisation
       operationId: get_appareils
-      description: 'Permission : `utilisateur.lire`. Exigences : RF-SUP-033.'
+      description: 'Permission : `utilisateur.lire`. Exigences : RF-SUP-033. Appareils de l''association, révoqués
+        compris, plus récemment synchronisés d''abord.'
       responses:
         '200':
           description: Succès
@@ -4908,7 +4973,9 @@ paths:
       - Synchronisation
       summary: Révoquer un appareil (et purger)
       operationId: post_appareils_id_revoquer
-      description: 'Permission : `utilisateur.gerer`. Exigences : RF-ADM-014.'
+      description: 'Permission : `utilisateur.gerer`. Exigences : RF-ADM-014. Révoque l''appareil et ses sessions : toute
+        requête suivante avec ce jeton reçoit 401 `APPAREIL_REVOQUE` (`erreurs[0].code = PURGE_DEMANDEE` si
+        `purger`, l''app efface alors sa base locale). Déjà révoqué → 409 `ETAT_INCOMPATIBLE`.'
       parameters:
       - name: id
         in: path
@@ -9318,6 +9385,24 @@ components:
           - string
           - 'null'
           format: date-time
+        purgeDemandee:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - nom
+      - plateforme
+      - versionApp
+      - prefixeRecu
+      - utilisateur
+      - derniereSync
+      - elementsEnAttente
+      - rejetsNonAcquittes
+      - revoqueAt
+      - purgeDemandee
+      - createdAt
     EnregistrementAppareil:
       type: object
       properties:
@@ -9332,11 +9417,31 @@ components:
           type: string
         jetonOtp:
           type: string
+        appareilId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: Appareil déjà enregistré à rattacher (réinstallation, nouvelle connexion)
       required:
       - nom
       - plateforme
       - versionApp
       - jetonOtp
+    AppareilEnregistre:
+      type: object
+      properties:
+        appareil:
+          $ref: '#/components/schemas/Appareil'
+        accessToken:
+          type: string
+          description: Jeton d'accès portant la claim `dev`
+        expireDans:
+          type: integer
+      required:
+      - appareil
+      - accessToken
+      - expireDans
     ChangesTable:
       type: object
       properties:
@@ -9366,7 +9471,12 @@ components:
           type: string
         limite:
           type: integer
+          minimum: 1
           maximum: 2000
+        elementsEnAttente:
+          type: integer
+          minimum: 0
+          description: Écritures locales pas encore poussées (affiché dans la console, A32)
       required:
       - curseur
       - versionSchema
@@ -9389,6 +9499,38 @@ components:
         createdAt:
           type: string
           format: date-time
+        appareilId:
+          type: string
+          format: uuid
+        appareilNom:
+          type: string
+        acquitteAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - id
+      - table
+      - elementId
+      - code
+      - message
+      - createdAt
+      - appareilId
+      - appareilNom
+      - acquitteAt
+    PageRejetSync:
+      type: object
+      properties:
+        donnees:
+          type: array
+          items:
+            $ref: '#/components/schemas/RejetSync'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+      required:
+      - donnees
+      - page
     SyncPullReponse:
       type: object
       properties:

@@ -60,6 +60,16 @@ export const STATUTS = {
     tenue: { libelle: 'Tenue', ton: 'succes' },
     annulee: { libelle: 'Annulée', ton: 'neutre' },
   },
+  /** Appareil mobile (E5-06). */
+  appareil: {
+    actif: { libelle: 'Actif', ton: 'succes' },
+    revoque: { libelle: 'Révoqué', ton: 'alerte' },
+  },
+  /** Rejet de synchronisation (docs/05 §6). */
+  rejetSync: {
+    a_corriger: { libelle: 'À corriger', ton: 'alerte' },
+    acquitte: { libelle: 'Acquitté', ton: 'neutre' },
+  },
   tache: {
     en_attente: { libelle: 'En attente', ton: 'attente' },
     en_cours: { libelle: 'En cours', ton: 'attente' },

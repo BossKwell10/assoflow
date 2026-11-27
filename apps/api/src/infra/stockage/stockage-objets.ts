@@ -11,12 +11,20 @@ export interface StockageObjets {
   contenu(cle: string): Promise<Buffer | null>;
   /** URL de lecture temporaire (5 min, docs/07 §6) : présignée (S3) ou servie et signée par l'API (local). */
   urlLecture(cle: string): Promise<string>;
+  /**
+   * URL d'envoi temporaire (`PUT`, 10 min, docs/05 §7) et en-têtes à joindre à la requête (type, chiffrement).
+   * Le client envoie le fichier directement au stockage ; l'API vérifie ensuite son contenu (`confirmer`).
+   */
+  urlEcriture(cle: string, typeMime: string): Promise<{ url: string; entetes: Record<string, string> }>;
 }
 
 export const STOCKAGE_OBJETS = Symbol('STOCKAGE_OBJETS');
 
 /** Durée de validité d'une URL de lecture (docs/04 §8). */
 export const DUREE_URL_LECTURE_S = 300;
+
+/** Durée de validité d'une URL d'envoi (docs/05 §7). */
+export const DUREE_URL_ECRITURE_S = 600;
 
 /** Clés acceptées : segments alphanumériques, tirets, points ; jamais de « .. » (pas de traversée de chemin). */
 export function verifierCle(cle: string): string {
